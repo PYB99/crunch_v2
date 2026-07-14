@@ -9,6 +9,12 @@ import Foundation
 // (FIX A/B) now adjusts carbs/fat so the day reconciles to TDEE — hand-fixed
 // exact values no longer hold. Diet/dual-goal cases (Sections 9/10) are out of
 // scope for this pass and deliberately omitted.
+//
+// @MainActor: the app builds with SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor, so
+// model/engine types (UserProfile, MacroEngine) are MainActor-isolated. Under
+// Swift 6 this nonisolated test suite must hop to MainActor to construct them
+// (idiomatic for this project's concurrency mode — see item 3 notes).
+@MainActor
 struct MacroEngineTests {
 
     // MARK: - Shared

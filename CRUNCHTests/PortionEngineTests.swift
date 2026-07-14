@@ -2,6 +2,10 @@ import Testing
 import Foundation
 @testable import CRUNCH
 
+// @MainActor: model/engine types are MainActor-isolated under the app's
+// SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor; the nonisolated test suite hops to
+// MainActor to use them under Swift 6 (see item 3 notes).
+@MainActor
 struct PortionEngineTests {
 
     // Helpers

@@ -1,6 +1,9 @@
 import Foundation
 
-enum Constants {
+// nonisolated so these immutable static constants can be read from any actor
+// (e.g. the SupabaseService actor). Without this, SWIFT_DEFAULT_ACTOR_ISOLATION
+// = MainActor makes every member MainActor-isolated, which errors under Swift 6.
+nonisolated enum Constants {
     // MARK: - Supabase (public — safe to commit)
     static let supabaseURL = "https://ryswtwcgzhmkmgzcklyx.supabase.co"
 
