@@ -1,0 +1,4 @@
+-- Squashed into 20260526170000_initial_schema.sql on 2026-07-14.
+-- Original content preserved in supabase/_pre_squash_backup/20260703000002_phase7_integrations_infra.sql.
+-- Kept as an empty no-op so the migration version stays recorded (it is already
+-- applied on the remote). See docs/phase7-remediation-plan.md item 2.

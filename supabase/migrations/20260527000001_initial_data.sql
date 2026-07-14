@@ -1,0 +1,3 @@
+-- Intentionally empty. The live project carries no seed data in the public
+-- schema (confirmed by the 2026-07-14 pg_dump). Kept as a recorded, empty
+-- migration version. See docs/phase7-remediation-plan.md item 2.
