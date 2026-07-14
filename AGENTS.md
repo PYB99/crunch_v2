@@ -196,7 +196,7 @@ supabase/                            # Existing — do not touch unless phase re
 
 ## Database Schema
 
-All tables use Clerk user ID (text, format `user_xxx`) as auth identity via `requesting_user_id()` function reading `auth.jwt()->>'sub'`.
+Auth identity is the Clerk user ID (text, format `user_xxx`), read by `requesting_user_id()` from `current_setting('request.jwt.claims')->>'sub'`. Text-keyed tables (`meals`, `coach_conversations`, `coach_messages`) store it directly in `user_id`; uuid-keyed tables (`races`, `training_sessions`, `macro_targets`, `integrations`) store `users.id` (uuid) in `user_id` and resolve via the `clerk_id → users.id` subquery in RLS.
 
 ### `users`
 | Column | Type | Notes |
@@ -214,61 +214,65 @@ All tables use Clerk user ID (text, format `user_xxx`) as auth identity via `req
 | has_completed_onboarding | boolean | Default false |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
+| apns_device_token | text | Nullable — APNs push token (Phase 7) |
 
 ### `races`
 | Column | Type | Notes |
 |---|---|---|
 | id | uuid | PK |
-| user_id | text | FK via clerk_id |
-| race_name | text | Optional |
+| user_id | uuid | FK → users.id |
 | race_type | text | '5k','10k','half_marathon','marathon','ultra_marathon','other' |
+| race_name | text | Optional |
 | race_date | date | |
-| is_active | boolean | |
+| is_active | boolean | Not null, default true |
 | created_at | timestamptz | |
+| Unique | | partial `races_single_active_per_user_idx` on `(user_id) WHERE is_active` — one active race/user |
 
 ### `training_sessions`
 | Column | Type | Notes |
 |---|---|---|
 | id | uuid | PK |
-| user_id | text | |
+| user_id | uuid | FK → users.id |
+| source | text | 'strava','runna','manual' |
 | session_date | date | |
 | session_type | text | 'easy_run','tempo','interval','long_run','race','rest', activity types |
-| distance_km | numeric | Nullable |
-| duration_minutes | numeric | Nullable |
-| source | text | 'strava','runna','manual' |
-| provider_activity_id | text | |
-| completed | boolean | |
+| distance_km | numeric(6,2) | Nullable |
+| duration_mins | integer | Nullable |
+| status | text | Not null, default 'planned' ('planned','completed') |
+| strava_activity_id | text | Nullable |
+| perceived_exertion | integer | Nullable |
+| runna_uid | text | Nullable |
 | created_at | timestamptz | |
+| Unique | | partial `(user_id, strava_activity_id)` and `(user_id, runna_uid)` |
 
 ### `macro_targets`
 | Column | Type | Notes |
 |---|---|---|
 | id | uuid | PK |
-| user_id | text | |
+| user_id | uuid | FK → users.id |
 | target_date | date | |
-| carbs_g | numeric | |
-| protein_g | numeric | |
-| fat_g | numeric | |
-| calories | numeric | |
-| session_type | text | |
-| training_phase | text | |
+| session_id | uuid | FK training_sessions, nullable |
+| calories_kcal | integer | |
+| carbs_g | integer | |
+| protein_g | integer | |
+| fat_g | integer | |
+| target_type | text | Not null (e.g. 'rest','easy','long','carb_load') |
 | created_at | timestamptz | |
-| Unique | | `(user_id, target_date)` |
+| Unique | | `macro_targets_user_date_idx` on `(user_id, target_date)` |
 
 ### `integrations`
 | Column | Type | Notes |
 |---|---|---|
 | id | uuid | PK |
-| user_id | text | |
+| user_id | uuid | FK → users.id |
 | provider | text | 'strava' or 'runna' |
-| access_token_encrypted | text | AES-GCM |
-| refresh_token_encrypted | text | AES-GCM |
-| token_expires_at | timestamptz | |
-| provider_user_id | text | |
-| runna_uid | text | |
-| is_active | boolean | |
-| created_at | timestamptz | |
-| updated_at | timestamptz | |
+| access_token | text | AES-GCM encrypted at rest (Runna: plaintext iCal URL) |
+| refresh_token | text | AES-GCM encrypted at rest |
+| token_expires_at | timestamptz | Nullable |
+| connected_at | timestamptz | Not null, default now() |
+| is_active | boolean | Not null, default true |
+| provider_user_id | text | Nullable |
+| Unique | | `integrations_user_provider_idx` on `(user_id, provider)` |
 
 ### `meals`
 | Column | Type | Notes |
@@ -310,11 +314,27 @@ All tables use Clerk user ID (text, format `user_xxx`) as auth identity via `req
 ```sql
 create or replace function requesting_user_id()
 returns text as $$
-  select auth.jwt()->>'sub';
+  select nullif(current_setting('request.jwt.claims', true)::json->>'sub', '')::text;
 $$ language sql stable;
 ```
 
-All tables: RLS enabled, policy scoped to `requesting_user_id() = user_id` (or `clerk_id` for users table). No exceptions.
+All tables: RLS enabled. Two keying patterns:
+- **Text-keyed** (`meals`, `coach_conversations`, `coach_messages`): scope `requesting_user_id() = user_id`.
+- **UUID-keyed** (`races`, `training_sessions`, `macro_targets`, `integrations`): scope `user_id = (select id from users where clerk_id = requesting_user_id())`.
+- **`users`**: scope on `clerk_id = requesting_user_id()` (separate SELECT + UPDATE policies).
+
+No exceptions.
+
+### Known Technical Debt (DB — deferred, tracked)
+
+Surfaced in the 2026-07-14 live-schema review (cross-ref `docs/phase7-remediation-plan.md` item 8). Not fixed — this is their permanent home.
+
+| ID | Debt | Fix when addressed |
+|---|---|---|
+| D1 | Duplicate index on `coach_messages`: `coach_messages_conversation_date` and `coach_messages_conversation_idx` both cover `(conversation_id, created_at)`. | `drop index` one, via a cleanup migration |
+| D2 | Duplicate FK on `coach_conversations.session_id`: `coach_conversations_session_fk` and `coach_conversations_session_id_fkey`, both → `training_sessions(id) ON DELETE SET NULL`. | `drop constraint` one, via a cleanup migration |
+| D3 | `handle_auth_user_created()` (public) is fired by a trigger on `auth.users`, which a `--schema public` dump/baseline does not capture — a fresh `db reset` won't auto-insert `public.users` rows on signup. | add the `auth.users` trigger to a migration, or document that `create-user-profile` covers it |
+| D4 | `requesting_user_id()` doc previously said `auth.jwt()->>'sub'`; it actually reads `current_setting('request.jwt.claims')`. **Resolved in this update** (function block + schema header above). | — (done) |
 
 ---
 
