@@ -144,6 +144,9 @@ Kept #1/#2 in the baseline for faithful reproduction (that's what makes the no-o
 
 **Pattern (mirror the working TodayView implementation, `TodayView.swift:412-432`):** add `@State private var showSettings = false`; the gear `Button` sets `showSettings = true`; add `.navigationDestination(isPresented: $showSettings) { SettingsView() }` on the view's existing `NavigationStack`. `SettingsView` already exists and is used by Today. Verify each of the three has its own `NavigationStack` to host the destination (Week does per L200-area; confirm Nutrition/Coach do too — if any lacks one, note it rather than restructuring silently).
 
+#### ✅ EXECUTED — Item 7 (2026-07-14), commit `0e33c19`
+All three views (Week, Nutrition, Coach) each already had their own `NavigationStack` — the three no-ops were replaced with `showSettings = true` + a `.navigationDestination(isPresented:) { SettingsView() }`, exactly per TodayView's pattern. No `NavigationStack` restructuring needed. Simulator build succeeded; no `// Phase 8` no-ops remain.
+
 ### Item (audit §2) — Unify DayRowView badge with PortionEngine
 **File:** `CRUNCH/Features/Week/DayRowView.swift`
 - The compact badge (`portionArrow`/`portionLabel`/`portionColor`, `DayRowView.swift:47-72`) derives Double/Extra/Normal/Lighter straight from `session.sessionType`, while the expanded rows (L82-85, L194-204) use `PortionEngine` (multiplier→level). They can disagree, and Today uses `PortionEngine` only.
@@ -171,6 +174,9 @@ These were found while backfilling the Item 2 baseline. Left as-is (the baseline
 | D2 | Duplicate FK on `coach_conversations.session_id`: `coach_conversations_session_fk` **and** `coach_conversations_session_id_fkey`, both → `training_sessions(id) ON DELETE SET NULL`. | redundant DB object | `drop constraint` one, via a cleanup migration |
 | D3 | `handle_auth_user_created()` lives in `public`, but its trigger (on `auth.users`) is outside `public` and so is **not** captured by the `--schema public` baseline — a fresh local `db reset` won't auto-insert `public.users` rows on signup. | migration-completeness gap | add the `auth.users` trigger to a migration (or document that `create-user-profile` covers it) |
 | D4 | `requesting_user_id()` doc mismatch (see Item 8 bullet above). | doc | fold into Item 8 |
+
+#### ✅ EXECUTED — Item 8 (2026-07-14), commit `3bfe61b`
+All five stale tables corrected against the live dump (training_sessions, macro_targets, integrations, users +`apns_device_token`, races +partial index); `user_id` corrected to `uuid` on the uuid-keyed tables; `requesting_user_id()` function body fixed + the two RLS keying patterns documented. **D1–D4 now also recorded in AGENTS.md** under a new "Known Technical Debt (DB — deferred, tracked)" section — the permanent home in the source-of-truth doc (D4 resolved in the same edit; D1–D3 remain deferred for a future cleanup migration). Docs-only; no build impact.
 
 ---
 
