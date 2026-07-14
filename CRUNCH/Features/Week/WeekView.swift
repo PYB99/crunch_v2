@@ -209,6 +209,7 @@ final class WeekViewModel {
 
 struct WeekView: View {
     @State private var viewModel = WeekViewModel()
+    @State private var showSettings = false
 
     var body: some View {
         let _ = print("DEBUG: WeekView.body entered")
@@ -230,13 +231,16 @@ struct WeekView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        // Phase 8: push SettingsView
+                        showSettings = true
                     } label: {
                         Image(systemName: "gearshape")
                             .foregroundStyle(Theme.textPrimary)
                     }
                     .frame(minWidth: 44, minHeight: 44)
                 }
+            }
+            .navigationDestination(isPresented: $showSettings) {
+                SettingsView()
             }
         }
         .task { await viewModel.load() }

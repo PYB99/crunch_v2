@@ -92,6 +92,7 @@ struct NutritionView: View {
     @State private var addingForTime = "breakfast"
     @State private var showingEditSheet = false
     @State private var mealToEdit: Meal?
+    @State private var showSettings = false
 
     var body: some View {
         let _ = print("DEBUG: NutritionView.body entered")
@@ -113,13 +114,16 @@ struct NutritionView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        // Phase 8: push SettingsView
+                        showSettings = true
                     } label: {
                         Image(systemName: "gearshape")
                             .foregroundStyle(Theme.textPrimary)
                     }
                     .frame(minWidth: 44, minHeight: 44)
                 }
+            }
+            .navigationDestination(isPresented: $showSettings) {
+                SettingsView()
             }
         }
         .sheet(isPresented: $showingAddSheet) {

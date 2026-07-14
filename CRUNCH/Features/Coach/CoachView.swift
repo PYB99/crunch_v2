@@ -159,6 +159,7 @@ struct MessageSection: Identifiable {
 struct CoachView: View {
     @State private var viewModel = CoachViewModel()
     @State private var inputText = ""
+    @State private var showSettings = false
     @Environment(AppRouter.self) private var router
 
     private let bottomAnchor = "coachBottom"
@@ -184,13 +185,16 @@ struct CoachView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        // Phase 8: push SettingsView
+                        showSettings = true
                     } label: {
                         Image(systemName: "gearshape")
                             .foregroundStyle(Theme.textPrimary)
                     }
                     .frame(minWidth: 44, minHeight: 44)
                 }
+            }
+            .navigationDestination(isPresented: $showSettings) {
+                SettingsView()
             }
         }
         .task {
