@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marathon Fuel Planner — Free Carb Loading & Race-Day Calculator | Crunch</title>
+<meta name="description" content="Free personalized marathon fuel plan: carb-loading targets in real food plus a race-day gel, fluid and sodium timeline built to your weight, race and goal time. Science-backed. No signup.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://REPLACE-WITH-YOUR-DOMAIN/tools/marathon-fuel-planner">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Marathon Fuel Planner — free carb loading & race-day calculator">
+<meta property="og:description" content="Don't hit the wall. Get a personalized carb-load and race-day fuel plan in real food and gels, in 20 seconds.">
+<meta property="og:image" content="https://REPLACE-WITH-YOUR-DOMAIN/og/fuel-planner.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>*{margin:0;padding:0}</style>
+</head>
+<body>
+<style>
+  :root{
+    --ground:#0B0A09; --card:#15120E; --card2:#1C1712; --line:#2C2620;
+    --ink:#F6F2EC; --dim:#A79F94; --faint:#6E675E;
+    --flame:#C4622D; --flame2:#E37B3E; --deep:#A3501F;
+    --stream:#3FA9C9; --amber:#F0A030;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,sans-serif;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--ground);color:var(--ink);font-family:var(--sans);
+    line-height:1.55;-webkit-font-smoothing:antialiased;margin:0;
+    background-image:radial-gradient(120% 80% at 50% -10%,rgba(196,98,45,.10),transparent 60%);}
+  .wrap{max-width:760px;margin:0 auto;padding:28px 20px 64px}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  h1,h2,h3{text-wrap:balance;margin:0}
+  a{color:var(--flame2)}
+
+  /* Header */
+  .brand{display:flex;align-items:center;gap:9px;margin-bottom:26px}
+  .brand .mark{width:11px;height:11px;border-radius:50%;background:var(--flame);
+    box-shadow:0 0 14px 1px rgba(196,98,45,.7)}
+  .brand .name{font-weight:800;letter-spacing:.22em;font-size:13px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--flame);margin-bottom:14px}
+  h1.title{font-size:clamp(30px,7vw,46px);font-weight:850;line-height:1.05;
+    letter-spacing:-.02em}
+  h1.title em{font-style:normal;color:var(--flame)}
+  .thesis{color:var(--dim);font-size:16px;margin-top:14px;max-width:52ch}
+
+  /* Panels */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:22px;margin-top:20px}
+  .panel-h{font-family:var(--mono);font-size:11px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--dim);display:flex;align-items:center;
+    gap:10px;margin-bottom:18px}
+  .panel-h::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* Form */
+  .field{margin-bottom:18px}
+  .field:last-child{margin-bottom:0}
+  label.lab{display:block;font-size:13px;color:var(--dim);margin-bottom:8px;
+    font-weight:600}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button, .toggle button{font-family:inherit;cursor:pointer;color:var(--dim);
+    background:var(--card2);border:1px solid var(--line);border-radius:10px;
+    padding:10px 14px;font-size:14px;font-weight:600;transition:.16s;flex:1;
+    min-width:64px;min-height:44px}
+  .seg button:hover,.toggle button:hover{border-color:var(--faint);color:var(--ink)}
+  .seg button[aria-pressed="true"]{background:var(--flame);border-color:var(--flame);
+    color:#120B06;box-shadow:0 3px 16px -6px rgba(196,98,45,.9)}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .row>.field{flex:1;min-width:130px;margin-bottom:0}
+  .weightbox{display:flex;gap:8px}
+  input[type=number]{flex:1;min-width:0;font-family:var(--mono);font-size:20px;
+    font-weight:600;color:var(--ink);background:var(--card2);border:1px solid var(--line);
+    border-radius:10px;padding:11px 13px;min-height:44px}
+  select{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--ink);
+    background:var(--card2);border:1px solid var(--line);border-radius:10px;
+    padding:11px 12px;min-height:44px;flex:1;-webkit-appearance:none;appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);
+    background-position:calc(100% - 18px) 20px,calc(100% - 13px) 20px;
+    background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  .unit{display:flex;gap:4px}
+  .unit button{font-family:var(--mono);font-size:13px;font-weight:700;cursor:pointer;
+    color:var(--dim);background:var(--card2);border:1px solid var(--line);
+    border-radius:8px;padding:0 12px;min-width:44px;min-height:44px}
+  .unit button[aria-pressed="true"]{background:var(--stream);border-color:var(--stream);color:#04222c}
+  .timegrp{display:flex;align-items:center;gap:8px}
+  .timegrp .colon{font-family:var(--mono);font-size:22px;color:var(--faint)}
+  input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--flame2);outline-offset:2px}
+
+  .cta-calc{width:100%;margin-top:22px;font-family:inherit;font-size:16px;
+    font-weight:800;letter-spacing:.01em;cursor:pointer;color:#120B06;
+    background:linear-gradient(180deg,var(--flame2),var(--flame));border:none;
+    border-radius:12px;padding:16px;min-height:52px;
+    box-shadow:0 8px 26px -10px rgba(196,98,45,.9)}
+  .cta-calc:hover{filter:brightness(1.06)}
+  .cta-calc:active{transform:translateY(1px)}
+
+  /* Results */
+  #results[hidden]{display:none}
+  .reveal{opacity:0;transform:translateY(14px);animation:rise .55s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  .readouts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px 14px;text-align:center;position:relative;overflow:hidden}
+  .stat .k{font-family:var(--mono);font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--dim)}
+  .stat .v{font-family:var(--mono);font-size:clamp(26px,7vw,34px);font-weight:700;
+    line-height:1.1;margin-top:6px}
+  .stat .u{font-family:var(--mono);font-size:12px;color:var(--faint)}
+  .stat.energy .v{color:var(--flame2)}
+  .stat.energy::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:var(--flame)}
+  .stat.water .v{color:var(--stream)}
+  .stat.water::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:var(--stream)}
+
+  /* Carb load */
+  .loaddays{display:flex;gap:12px}
+  .day{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:15px}
+  .day .when{font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--flame);margin-bottom:6px}
+  .day .g{font-family:var(--mono);font-size:30px;font-weight:700}
+  .day .g small{font-size:14px;color:var(--dim);font-weight:400}
+  .day .sub{font-size:12px;color:var(--dim);margin-top:2px}
+  .equiv{margin-top:18px}
+  .equiv .lead{font-size:14px;color:var(--dim);margin-bottom:10px}
+  .equiv .lead b{color:var(--ink)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-family:var(--mono);font-size:13px;background:var(--card2);
+    border:1px solid var(--line);border-radius:20px;padding:7px 13px;white-space:nowrap}
+  .chip b{color:var(--flame2)}
+
+  /* Race day schedule + timeline */
+  .fuelgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+  .fuelgrid .box{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .fuelgrid .box .k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--dim)}
+  .fuelgrid .box .v{font-family:var(--mono);font-size:22px;font-weight:700;margin-top:5px}
+  .fuelgrid .box.water .v{color:var(--stream)}
+  .fuelgrid .box.energy .v{color:var(--flame2)}
+  .fuelgrid .box .n{font-size:12px;color:var(--dim);margin-top:3px}
+
+  .tl-h{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--dim);margin:6px 0 16px}
+  .track{position:relative;height:10px;border-radius:6px;background:var(--card2);
+    border:1px solid var(--line);margin:38px 4px 10px}
+  .track .fill{position:absolute;inset:0;border-radius:6px;transform-origin:left;
+    background:linear-gradient(90deg,var(--deep),var(--flame),var(--flame2));
+    animation:grow 1s .1s cubic-bezier(.3,.8,.3,1) both}
+  @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  .drop{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;
+    background:var(--flame2);border:2px solid var(--ground);transform:translate(-50%,-50%);
+    box-shadow:0 0 0 3px rgba(227,123,62,.18);opacity:0;animation:pop .3s forwards}
+  @keyframes pop{to{opacity:1}}
+  .wall{position:absolute;top:-34px;bottom:-8px;width:2px;background:var(--amber);opacity:.85}
+  .wall::after{content:"THE WALL";position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+    font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--amber);white-space:nowrap}
+  .startend{display:flex;justify-content:space-between;font-family:var(--mono);
+    font-size:11px;color:var(--faint);margin:0 4px}
+
+  .sched{margin-top:20px;width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px}
+  .sched th{text-align:left;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--dim);font-weight:600;padding:0 0 10px;border-bottom:1px solid var(--line)}
+  .sched td{padding:11px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  .sched tr:last-child td{border-bottom:none}
+  .sched .g{color:var(--flame2)}
+  .sched td.take{font-family:var(--sans);color:var(--ink)}
+  .schedwrap{overflow-x:auto}
+
+  /* Notes */
+  .note{display:flex;gap:11px;padding:13px 15px;background:rgba(240,160,48,.07);
+    border:1px solid rgba(240,160,48,.25);border-radius:11px;margin-top:12px;font-size:13.5px}
+  .note .i{color:var(--amber);flex:none;font-weight:800;font-family:var(--mono)}
+  .note b{color:var(--ink)}
+
+  .cites{margin-top:26px;font-size:11.5px;color:var(--faint);line-height:1.7}
+  .cites .h{font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+
+  .appcta{margin-top:26px;background:linear-gradient(180deg,var(--card),#100D0A);
+    border:1px solid var(--line);border-radius:16px;padding:24px;text-align:center}
+  .appcta h3{font-size:21px;font-weight:800;letter-spacing:-.01em}
+  .appcta p{color:var(--dim);font-size:14px;margin:9px auto 16px;max-width:46ch}
+  .appcta .go{display:inline-block;font-weight:800;color:#120B06;text-decoration:none;
+    background:var(--flame);border-radius:11px;padding:13px 26px;min-height:44px}
+  .appcta .go:hover{filter:brightness(1.07)}
+
+  .foot{text-align:center;color:var(--faint);font-size:11px;margin-top:26px;font-family:var(--mono)}
+
+  @media(max-width:520px){
+    .readouts{grid-template-columns:1fr;gap:10px}
+    .stat{display:flex;align-items:baseline;justify-content:space-between;text-align:left;padding:14px 16px}
+    .stat .v{font-size:26px}
+    .loaddays{flex-direction:column}
+    .fuelgrid{grid-template-columns:1fr}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .reveal,.track .fill,.drop{animation:none;opacity:1;transform:none}
+  }
+</style>
+
+<div class="wrap">
+  <div class="brand"><span class="mark"></span><span class="name">CRUNCH</span></div>
+
+  <div class="eyebrow">Free · Marathon Fuel Planner</div>
+  <h1 class="title">Don't hit the <em>wall.</em></h1>
+  <p class="thesis">A carb-load and race-day fuel plan built to your weight, your race, and your gut — in real food and real gels, not vague grams. Takes 20 seconds.</p>
+
+  <!-- INPUTS -->
+  <div class="panel" id="inputs">
+    <div class="panel-h">Your race</div>
+
+    <div class="field">
+      <label class="lab" for="w">Body weight</label>
+      <div class="weightbox">
+        <input id="w" type="number" inputmode="decimal" value="70" min="35" max="160" aria-label="Body weight value">
+        <div class="unit" role="group" aria-label="Weight unit">
+          <button type="button" data-wu="kg" aria-pressed="true">kg</button>
+          <button type="button" data-wu="lb" aria-pressed="false">lb</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="lab">Race distance</label>
+      <div class="seg" id="dist" role="group" aria-label="Race distance">
+        <button type="button" data-km="10" data-mi="6.2" data-def="0:50" aria-pressed="false">10K</button>
+        <button type="button" data-km="21.1" data-mi="13.1" data-def="1:55" aria-pressed="false">Half</button>
+        <button type="button" data-km="42.2" data-mi="26.2" data-def="4:00" aria-pressed="true">Marathon</button>
+        <button type="button" data-km="50" data-mi="31" data-def="6:00" aria-pressed="false">50K Ultra</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label class="lab" for="gh">Goal finish time</label>
+        <div class="timegrp">
+          <select id="gh" aria-label="Goal hours"></select>
+          <span class="colon mono">:</span>
+          <select id="gm" aria-label="Goal minutes"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lab">Distance shown in</label>
+        <div class="unit" role="group" aria-label="Distance unit" style="height:44px">
+          <button type="button" data-du="km" aria-pressed="true">km</button>
+          <button type="button" data-du="mi" aria-pressed="false">mi</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="lab">Fueling experience — how much can your gut take?</label>
+      <div class="seg" id="exp" role="group" aria-label="Fueling experience">
+        <button type="button" data-cph="40" aria-pressed="false">New to fueling</button>
+        <button type="button" data-cph="65" aria-pressed="true">Experienced</button>
+        <button type="button" data-cph="90" aria-pressed="false">Gut-trained</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="lab">Do you sweat salty? (white marks on your kit, salty taste)</label>
+      <div class="toggle seg" id="salt" role="group" aria-label="Salty sweater">
+        <button type="button" data-salt="0" aria-pressed="true">No / not sure</button>
+        <button type="button" data-salt="1" aria-pressed="false">Yes, salty</button>
+      </div>
+    </div>
+
+    <button class="cta-calc" id="go" type="button">Build my fuel plan →</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" hidden aria-live="polite">
+
+    <div class="readouts reveal">
+      <div class="stat energy"><div class="k">Race carbs</div><div class="v" id="r-cph">65</div><div class="u">grams / hour</div></div>
+      <div class="stat energy"><div class="k">Total to carry</div><div class="v" id="r-total">260</div><div class="u" id="r-gels">≈ 12 gels</div></div>
+      <div class="stat energy"><div class="k">Carb-load</div><div class="v" id="r-load">700</div><div class="u">g · day before</div></div>
+    </div>
+
+    <!-- Carb load -->
+    <div class="panel reveal" style="animation-delay:.06s">
+      <div class="panel-h">Carb-load · the 48 hours before</div>
+      <div class="loaddays">
+        <div class="day">
+          <div class="when">2 days out</div>
+          <div class="g" id="d2">490<small> g</small></div>
+          <div class="sub" id="d2g">7 g per kg</div>
+        </div>
+        <div class="day">
+          <div class="when">Day before</div>
+          <div class="g" id="d1">700<small> g</small></div>
+          <div class="sub" id="d1g">10 g per kg</div>
+        </div>
+      </div>
+      <div class="equiv">
+        <div class="lead">The day-before target — <b id="e-total">700 g</b> — is roughly any of these, spread across meals and snacks:</div>
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="note"><span class="i">!</span><span><b>Keep it low-fiber, low-fat.</b> Bagels, white rice, pasta, bananas, honey, sports drink — not beans, salad, or big fatty meals. Fiber and fat the day before are what cause race-morning gut trouble.</span></div>
+    </div>
+
+    <!-- Race day -->
+    <div class="panel reveal" style="animation-delay:.12s">
+      <div class="panel-h">Race day · your fuel timeline</div>
+
+      <div class="fuelgrid">
+        <div class="box energy"><div class="k">Carbs</div><div class="v" id="f-cph">65 g/h</div><div class="n" id="f-cad">one gel every ~20 min</div></div>
+        <div class="box water"><div class="k">Fluid</div><div class="v" id="f-fluid">500 ml/h</div><div class="n" id="f-fluidt">≈ 2.0 L total</div></div>
+        <div class="box water"><div class="k">Sodium</div><div class="v" id="f-sod">500 mg/h</div><div class="n" id="f-sodt">electrolytes, not plain water</div></div>
+        <div class="box energy"><div class="k">Total energy</div><div class="v" id="f-tot">260 g</div><div class="n" id="f-totn">carbs across the race</div></div>
+      </div>
+
+      <div class="tl-h">Take a little, often — every marker below</div>
+      <div class="startend"><span>START</span><span id="tl-finish">FINISH · 4:00</span></div>
+      <div class="track" id="track"><div class="fill"></div></div>
+
+      <div class="schedwrap">
+      <table class="sched" id="sched">
+        <thead><tr><th>Time</th><th id="sched-dist">Distance</th><th>Take</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      </div>
+
+      <div class="note" id="gutnote" hidden><span class="i">▲</span><span><b>Your gut isn't there yet.</b> 90 g/hr is advanced territory — start gut training <b>8–10 weeks out</b>: practice on long runs from ~40 g/hr, add 10–15 g every couple of weeks. Never try a new fueling rate on race day.</span></div>
+      <div class="note" id="mtcnote" hidden><span class="i">2:1</span><span>Above 60 g/hr you need <b>multiple carb sources</b> (glucose + fructose, ~2:1) — a single glucose gel maxes out around 60 g/hr. Most "beta fuel / dual-carb" products already do this.</span></div>
+    </div>
+
+    <div class="cites">
+      <div class="h">The science</div>
+      Carb-load 10–12 g/kg, 36–48 h out — Burke LM et al., <i>J Sports Sciences</i> 2011; ACSM/AND Joint Position Statement 2016. Race-day 60–90 g/hr (up to 90–120 g/hr gut-trained) via multiple transportable carbs — Jeukendrup A, <i>Sports Medicine</i> 2011/2014. Taper &amp; loading — Mujika &amp; Padilla, <i>MSSE</i> 2003. This tool is general guidance, not medical or individual dietary advice — rehearse every strategy in training first.
+    </div>
+
+    <div class="appcta">
+      <h3>This is one race. Crunch does every day.</h3>
+      <p>Crunch turns your Strava &amp; Runna training into daily meal portions, a race-day plan that adapts to your gut training, and an AI coach that knows your meals by name — no calorie counting, ever.</p>
+      <a class="go" href="#">Get Crunch →</a>
+    </div>
+
+    <div class="foot">Built by Crunch · Fuel for your race, not your weight.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var state={wu:"kg",du:"km",km:42.2,mi:26.2,cph:65,salt:0};
+
+  // populate time selects
+  var gh=document.getElementById("gh"),gm=document.getElementById("gm");
+  for(var h=0;h<=8;h++){var o=document.createElement("option");o.value=h;o.textContent=h;gh.appendChild(o);}
+  for(var m=0;m<60;m+=5){var o2=document.createElement("option");o2.value=m;o2.textContent=(m<10?"0":"")+m;gm.appendChild(o2);}
+  function setTime(str){var p=str.split(":");gh.value=parseInt(p[0],10);gm.value=parseInt(p[1],10);}
+  setTime("4:00");
+
+  function bindSeg(id,attr,fn){
+    document.getElementById(id).addEventListener("click",function(e){
+      var b=e.target.closest("button");if(!b)return;
+      [].forEach.call(this.querySelectorAll("button"),function(x){x.setAttribute("aria-pressed","false")});
+      b.setAttribute("aria-pressed","true");fn(b);
+    });
+  }
+  bindSeg("dist","",function(b){state.km=+b.dataset.km;state.mi=+b.dataset.mi;setTime(b.dataset.def);});
+  bindSeg("exp","",function(b){state.cph=+b.dataset.cph;});
+  bindSeg("salt","",function(b){state.salt=+b.dataset.salt;});
+
+  // weight unit
+  document.querySelector('[data-wu="kg"]').parentNode.addEventListener("click",function(e){
+    var b=e.target.closest("button");if(!b)return;
+    var w=document.getElementById("w"),cur=parseFloat(w.value)||70;
+    [].forEach.call(this.querySelectorAll("button"),function(x){x.setAttribute("aria-pressed","false")});
+    b.setAttribute("aria-pressed","true");
+    if(b.dataset.wu==="lb"&&state.wu==="kg"){w.value=Math.round(cur*2.2046);}
+    if(b.dataset.wu==="kg"&&state.wu==="lb"){w.value=Math.round(cur/2.2046);}
+    state.wu=b.dataset.wu;
+  });
+  // distance unit
+  document.querySelector('[data-du="km"]').parentNode.addEventListener("click",function(e){
+    var b=e.target.closest("button");if(!b)return;
+    [].forEach.call(this.querySelectorAll("button"),function(x){x.setAttribute("aria-pressed","false")});
+    b.setAttribute("aria-pressed","true");state.du=b.dataset.du;
+  });
+
+  function fmt(n){return n.toLocaleString("en-US")}
+
+  document.getElementById("go").addEventListener("click",function(){
+    var wIn=parseFloat(document.getElementById("w").value)||70;
+    var kg=state.wu==="kg"?wIn:wIn/2.2046;
+    kg=Math.max(35,Math.min(160,kg));
+    var mins=parseInt(gh.value,10)*60+parseInt(gm.value,10);
+    if(mins<20)mins=20;
+    var hours=mins/60;
+    var distVal=state.du==="km"?state.km:state.mi;
+    var distUnit=state.du;
+
+    // ---- carb load ----
+    var d1=Math.round(10*kg), d2=Math.round(7*kg);
+    document.getElementById("d1").innerHTML=fmt(d1)+'<small> g</small>';
+    document.getElementById("d2").innerHTML=fmt(d2)+'<small> g</small>';
+    document.getElementById("d1g").textContent="10 g per kg";
+    document.getElementById("d2g").textContent="7 g per kg";
+    document.getElementById("r-load").textContent=fmt(d1);
+    document.getElementById("e-total").textContent=fmt(d1)+" g";
+    var eq=[["bagels",50],["cups of rice",45],["bowls of pasta",43],["bananas",27],["500ml sports drinks",30]];
+    document.getElementById("chips").innerHTML=eq.map(function(x){
+      return '<span class="chip"><b>'+Math.round(d1/x[1])+'</b> '+x[0]+'</span>';}).join("");
+
+    // ---- race day ----
+    var cph=state.cph;
+    if(hours<1.25){cph=Math.min(cph,30);} // short race: minimal fuel
+    var gelG=22;
+    var cadence=Math.max(15,Math.min(30,Math.round((gelG/cph)*60/5)*5));
+    // markers from 20min, every cadence, until mins-15
+    var pts=[],t=20,lastKm=null;
+    while(t<=mins-12){
+      var frac=t/mins, dv=frac*distVal;
+      pts.push({t:t,frac:frac,d:dv});
+      t+=cadence;
+    }
+    if(pts.length<1)pts.push({t:20,frac:20/mins,d:(20/mins)*distVal});
+    var gels=pts.length, total=gels*gelG, effCph=Math.round(total/hours);
+    var fluidH=state.salt?600:500, fluidT=(fluidH*hours/1000);
+    var sodH=state.salt?800:500;
+
+    document.getElementById("r-cph").textContent=effCph;
+    document.getElementById("r-total").textContent=total+" g";
+    document.getElementById("r-gels").textContent="≈ "+gels+" gels";
+    document.getElementById("f-cph").textContent=effCph+" g/h";
+    document.getElementById("f-cad").textContent="one gel every ~"+cadence+" min";
+    document.getElementById("f-fluid").textContent=fluidH+" ml/h";
+    document.getElementById("f-fluidt").textContent="≈ "+fluidT.toFixed(1)+" L total";
+    document.getElementById("f-sod").textContent=sodH+" mg/h";
+    document.getElementById("f-sodt").textContent=state.salt?"you lose salt fast — prioritise it":"electrolytes, not plain water";
+    document.getElementById("f-tot").textContent=total+" g";
+
+    // finish label
+    document.getElementById("tl-finish").textContent="FINISH · "+parseInt(gh.value,10)+":"+(gm.value<10?"0":"")+gm.value;
+
+    // timeline dots + wall
+    var track=document.getElementById("track");
+    [].forEach.call(track.querySelectorAll(".drop,.wall"),function(x){x.remove()});
+    pts.forEach(function(p,i){
+      var d=document.createElement("div");d.className="drop";
+      d.style.left=(p.frac*100)+"%";d.style.animationDelay=(0.9+i*0.06)+"s";
+      track.appendChild(d);
+    });
+    if(state.km>=42){ // the wall — marathon
+      var wallFrac=32/state.km; var wl=document.createElement("div");
+      wl.className="wall";wl.style.left=(wallFrac*100)+"%";track.appendChild(wl);
+    }
+
+    // schedule table
+    document.getElementById("sched-dist").textContent="Distance ("+distUnit+")";
+    var tb=document.querySelector("#sched tbody");tb.innerHTML="";
+    pts.forEach(function(p,i){
+      var hh=Math.floor(p.t/60), mm=p.t%60;
+      var take= i%2===0 ? "1 gel + a few sips" : "1 gel + drink to thirst";
+      if(state.salt && i%3===2) take="1 gel + electrolyte drink";
+      var tr=document.createElement("tr");
+      tr.innerHTML='<td class="g">'+hh+":"+(mm<10?"0":"")+mm+'</td><td>'+p.d.toFixed(1)+'</td><td class="take">'+take+'</td>';
+      tb.appendChild(tr);
+    });
+
+    // notes
+    document.getElementById("gutnote").hidden = !(state.cph>=90);
+    document.getElementById("mtcnote").hidden = !(effCph>60);
+
+    var res=document.getElementById("results");
+    res.hidden=false;
+    // retrigger reveal animations
+    [].forEach.call(res.querySelectorAll(".reveal"),function(el){
+      el.style.animation="none";el.offsetHeight;el.style.animation="";
+    });
+    res.scrollIntoView({behavior:(matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"),block:"start"});
+  });
+})();
+</script>
+
+</body>
+</html>

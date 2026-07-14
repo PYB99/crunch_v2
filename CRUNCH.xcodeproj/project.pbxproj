@@ -6,6 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		07CE10EEE62043A1B5FDCABA /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = B45DB0FB83CB43E0828A2513 /* RevenueCat */; };
+		1CA54064668447BC9A3B5400 /* Mixpanel in Frameworks */ = {isa = PBXBuildFile; productRef = 9B6ABF6DFB814828803F87A5 /* Mixpanel */; };
+		55467A0198AD4F739A075CFB /* ClerkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 8414E01E3B344A26B9B7C14D /* ClerkKit */; };
+		67E28C6C12914B6A90A5DB03 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = BC577C9E3E6C423E819CC902 /* Supabase */; };
+		CD5B33482FF2DA160061AAEA /* AGENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = CD5B33472FF2DA160061AAEA /* AGENTS.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		CD5B33292FF2D64A0061AAEA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,14 +32,30 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0EF4CCB2E818458E9BBF927D /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		B5E1D2F3A4C7896501234567 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		CD5B331B2FF2D64A0061AAEA /* CRUNCH.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CRUNCH.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD5B33282FF2D64A0061AAEA /* CRUNCHTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CRUNCHTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD5B33322FF2D64A0061AAEA /* CRUNCHUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CRUNCHUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CD5B33472FF2DA160061AAEA /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A1B2C3D4E5F67890A1B2C3D4 /* Exceptions for "CRUNCH" folder in "CRUNCH" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CD5B331A2FF2D64A0061AAEA /* CRUNCH */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CD5B331D2FF2D64A0061AAEA /* CRUNCH */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A1B2C3D4E5F67890A1B2C3D4 /* Exceptions for "CRUNCH" folder in "CRUNCH" target */,
+			);
 			path = CRUNCH;
 			sourceTree = "<group>";
 		};
@@ -52,6 +76,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				67E28C6C12914B6A90A5DB03 /* Supabase in Frameworks */,
+				55467A0198AD4F739A075CFB /* ClerkKit in Frameworks */,
+				07CE10EEE62043A1B5FDCABA /* RevenueCat in Frameworks */,
+				1CA54064668447BC9A3B5400 /* Mixpanel in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -79,6 +107,9 @@
 				CD5B332B2FF2D64A0061AAEA /* CRUNCHTests */,
 				CD5B33352FF2D64A0061AAEA /* CRUNCHUITests */,
 				CD5B331C2FF2D64A0061AAEA /* Products */,
+				CD5B33472FF2DA160061AAEA /* AGENTS.md */,
+				0EF4CCB2E818458E9BBF927D /* Secrets.xcconfig */,
+				B5E1D2F3A4C7896501234567 /* Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -112,6 +143,10 @@
 			);
 			name = CRUNCH;
 			packageProductDependencies = (
+				BC577C9E3E6C423E819CC902 /* Supabase */,
+				8414E01E3B344A26B9B7C14D /* ClerkKit */,
+				B45DB0FB83CB43E0828A2513 /* RevenueCat */,
+				9B6ABF6DFB814828803F87A5 /* Mixpanel */,
 			);
 			productName = CRUNCH;
 			productReference = CD5B331B2FF2D64A0061AAEA /* CRUNCH.app */;
@@ -195,6 +230,12 @@
 			);
 			mainGroup = CD5B33122FF2D64A0061AAEA;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				CD5B33492FF395140061AAEA /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				CD5B334A2FF3952C0061AAEA /* XCRemoteSwiftPackageReference "clerk-ios" */,
+				CD5B334B2FF395710061AAEA /* XCRemoteSwiftPackageReference "purchases-ios" */,
+				CD5B334C2FF3959D0061AAEA /* XCRemoteSwiftPackageReference "mixpanel-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CD5B331C2FF2D64A0061AAEA /* Products */;
 			projectDirPath = "";
@@ -212,6 +253,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD5B33482FF2DA160061AAEA /* AGENTS.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -385,6 +427,7 @@
 		};
 		CD5B333D2FF2D64A0061AAEA /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0EF4CCB2E818458E9BBF927D /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -393,17 +436,8 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -427,6 +461,7 @@
 		};
 		CD5B333E2FF2D64A0061AAEA /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0EF4CCB2E818458E9BBF927D /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -435,17 +470,8 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -605,6 +631,64 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		CD5B33492FF395140061AAEA /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+		CD5B334A2FF3952C0061AAEA /* XCRemoteSwiftPackageReference "clerk-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/clerk/clerk-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.6;
+			};
+		};
+		CD5B334B2FF395710061AAEA /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.80.0;
+			};
+		};
+		CD5B334C2FF3959D0061AAEA /* XCRemoteSwiftPackageReference "mixpanel-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mixpanel/mixpanel-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.4.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		8414E01E3B344A26B9B7C14D /* ClerkKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CD5B334A2FF3952C0061AAEA /* XCRemoteSwiftPackageReference "clerk-ios" */;
+			productName = ClerkKit;
+		};
+		9B6ABF6DFB814828803F87A5 /* Mixpanel */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CD5B334C2FF3959D0061AAEA /* XCRemoteSwiftPackageReference "mixpanel-swift" */;
+			productName = Mixpanel;
+		};
+		B45DB0FB83CB43E0828A2513 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CD5B334B2FF395710061AAEA /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
+		};
+		BC577C9E3E6C423E819CC902 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CD5B33492FF395140061AAEA /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = CD5B33132FF2D64A0061AAEA /* Project object */;
 }
