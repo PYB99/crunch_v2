@@ -3,6 +3,7 @@ import SwiftUI
 struct DayRowView: View {
     let date: Date
     let session: TrainingSession?
+    var previousSessionType: String? = nil
     let userProfile: UserProfile
     let raceDate: String?
     let meals: [Meal]
@@ -19,8 +20,16 @@ struct DayRowView: View {
 
     private var isCompletedRun: Bool {
         guard let s = session else { return false }
-        let runTypes: Set<String> = ["easy_run", "tempo", "interval", "long_run", "race"]
-        return runTypes.contains(s.sessionType) && s.status == "completed"
+        return MacroEngine.isRunSession(s.sessionType) && s.status == "completed"
+    }
+
+    // Split race_* types collapse onto "race" for the session-type-derived
+    // badge/copy switches below. (Badge unification with PortionEngine is a
+    // separate audit item; recovery_day is reflected in the expanded macros,
+    // not the compact arrow, until that lands.)
+    private var badgeType: String? {
+        guard let t = session?.sessionType else { return nil }
+        return MacroEngine.isRaceSession(t) ? "race" : t
     }
 
     private var dayName: String {
@@ -45,7 +54,7 @@ struct DayRowView: View {
     }
 
     private var portionArrow: String {
-        switch session?.sessionType {
+        switch badgeType {
         case "long_run", "race":               return "↑↑"
         case "tempo", "interval":              return "↑"
         case "easy_run", "cycling", "swimming": return "→"
@@ -54,7 +63,7 @@ struct DayRowView: View {
     }
 
     private var portionLabel: String {
-        switch session?.sessionType {
+        switch badgeType {
         case "long_run", "race":               return "Double"
         case "tempo", "interval":              return "Extra"
         case "easy_run", "cycling", "swimming": return "Normal"
@@ -63,7 +72,7 @@ struct DayRowView: View {
     }
 
     private var portionColor: Color {
-        switch session?.sessionType {
+        switch badgeType {
         case "long_run", "race":               return Theme.warning
         case "tempo", "interval":              return Theme.brand
         case "easy_run", "cycling", "swimming": return Theme.textSecondary
@@ -75,7 +84,8 @@ struct DayRowView: View {
         MacroEngine.calculate(
             user: userProfile,
             raceDate: raceDate,
-            sessionType: session?.sessionType ?? "rest"
+            sessionType: session?.sessionType ?? "rest",
+            previousSessionType: previousSessionType
         )
     }
 
@@ -85,9 +95,9 @@ struct DayRowView: View {
     }
 
     private var fuelingTip: String {
-        switch session?.sessionType {
+        switch badgeType {
         case "long_run": return "Carb-load the night before. Aim for ~8.5g/kg today — your biggest fuel window."
-        case "race":     return "Race day: 11g/kg carbs. Stay hydrated. Trust your training."
+        case "race":     return "Race day: fuel to your distance. Stay hydrated. Trust your training."
         case "tempo", "interval": return "High-intensity day — carbs are your primary fuel source."
         case "easy_run": return "Easy day: keep it balanced. No need to over-fuel."
         default:         return "Rest day: lighter carbs, maintain protein for muscle recovery."

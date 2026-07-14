@@ -30,10 +30,8 @@ final class TodayViewModel {
     private var userUUID: UUID?
     private var race: Race?
     private var primarySession: TrainingSession?
+    private var previousSessionType: String?   // yesterday's run — drives recovery-day detection
     private var meals: [Meal] = []
-
-    // Run types that drive the primary TDEE / carb calculation
-    private static let runTypes: Set<String> = ["easy_run", "tempo", "interval", "long_run", "race"]
 
     // MARK: - Data Loading
 
@@ -90,13 +88,21 @@ final class TodayViewModel {
                 .execute()
                 .value
 
-            primarySession = allSessions.first { Self.runTypes.contains($0.sessionType) }
+            primarySession = allSessions.first { MacroEngine.isRunSession($0.sessionType) }
             let activitySessions = allSessions.filter {
-                !Self.runTypes.contains($0.sessionType) && $0.sessionType != "rest"
+                !MacroEngine.isRunSession($0.sessionType) && $0.sessionType != "rest"
             }
             if let dbActivity = activitySessions.first {
                 addedActivity = ActivityType(rawValue: dbActivity.sessionType)
             }
+
+            // Yesterday's run — drives recovery-day detection (master spec §3.4)
+            let yesterdaySessions: [TrainingSession] = try await client.from("training_sessions")
+                .select()
+                .eq("session_date", value: yesterdayDateString())
+                .execute()
+                .value
+            previousSessionType = yesterdaySessions.first { MacroEngine.isRunSession($0.sessionType) }?.sessionType
 
             // 4. Meals ordered by sort_order
             meals = try await client.from("meals")
@@ -234,6 +240,7 @@ final class TodayViewModel {
             user: userProfile,
             raceDate: race?.raceDate,
             sessionType: sessionType,
+            previousSessionType: previousSessionType,
             additionalActivities: activities
         )
 
@@ -363,7 +370,9 @@ final class TodayViewModel {
         }
     }
 
-    private func scienceTip(for mealTime: String, sessionType: String) -> String {
+    private func scienceTip(for mealTime: String, sessionType rawType: String) -> String {
+        // Collapse split race_* types onto "race" for copy lookup.
+        let sessionType = MacroEngine.isRaceSession(rawType) ? "race" : rawType
         switch (mealTime, sessionType) {
         case ("dinner", "long_run"), ("dinner", "race"):
             return "Burke et al. (2011): 8–10g carbs/kg in the 24h before a long effort maximises glycogen storage."
@@ -376,8 +385,11 @@ final class TodayViewModel {
         }
     }
 
-    private func sessionSubtitleText(for sessionType: String) -> String {
+    private func sessionSubtitleText(for rawType: String) -> String {
+        // Collapse split race_* types onto "race" for copy lookup.
+        let sessionType = MacroEngine.isRaceSession(rawType) ? "race" : rawType
         switch sessionType {
+        case "recovery_day": return "Recovery day — refuel and rebuild after yesterday's effort"
         case "long_run":  return "Fuel up tonight — carb loading starts now"
         case "race":      return "Race day fuel — carb-load complete, stay topped up"
         case "tempo":     return "High-intensity day — carbs are your fuel"
@@ -391,6 +403,13 @@ final class TodayViewModel {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
         return fmt.string(from: Date())
+    }
+
+    private func yesterdayDateString() -> String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+        return fmt.string(from: yesterday)
     }
 }
 

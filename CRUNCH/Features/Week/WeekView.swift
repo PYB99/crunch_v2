@@ -40,10 +40,19 @@ final class WeekViewModel {
         return "\(fmt.string(from: start)) – \(fmt.string(from: end))"
     }
 
+    // sessions includes one extra leading day (for recovery-day detection);
+    // summary/empty-state must only count the displayed Mon–Sun window.
+    private var displayWeekSessions: [TrainingSession] {
+        let (start, end) = Self.weekBounds(offset: weekOffset)
+        let startStr = Self.ymd(start)
+        let endStr = Self.ymd(end)
+        return sessions.filter { $0.sessionDate >= startStr && $0.sessionDate <= endStr }
+    }
+
     var weekSummaryStr: String {
-        let runTypes: Set<String> = ["easy_run", "tempo", "interval", "long_run", "race"]
-        let runSessions = sessions.filter { runTypes.contains($0.sessionType) }
-        let totalKm = sessions.compactMap { $0.distanceKm }.reduce(0, +)
+        let display = displayWeekSessions
+        let runSessions = display.filter { MacroEngine.isRunSession($0.sessionType) }
+        let totalKm = display.compactMap { $0.distanceKm }.reduce(0, +)
 
         var parts: [String] = []
         if totalKm > 0 { parts.append("Total: \(Int(totalKm.rounded())) km") }
@@ -53,20 +62,27 @@ final class WeekViewModel {
         return parts.isEmpty ? "Rest week" : parts.joined(separator: " · ")
     }
 
-    // 7 (date, session?) pairs for the displayed week
-    var weekDays: [(date: Date, session: TrainingSession?)] {
+    // 7 (date, session?, previousSessionType?) tuples for the displayed week.
+    // previousSessionType is the prior day's run type (loadSessions fetches one
+    // extra leading day), which drives recovery-day detection in the engine.
+    var weekDays: [(date: Date, session: TrainingSession?, previousSessionType: String?)] {
         let (start, _) = Self.weekBounds(offset: weekOffset)
         let cal = Calendar(identifier: .gregorian)
         return (0..<7).map { i in
             let date = cal.date(byAdding: .day, value: i, to: start)!
             let dateStr = Self.ymd(date)
             let session = sessions.first { $0.sessionDate == dateStr }
-            return (date, session)
+            let prevDate = cal.date(byAdding: .day, value: -1, to: date)!
+            let prevStr = Self.ymd(prevDate)
+            let previousType = sessions.first {
+                $0.sessionDate == prevStr && MacroEngine.isRunSession($0.sessionType)
+            }?.sessionType
+            return (date, session, previousType)
         }
     }
 
     var showNoRunnaPrompt: Bool {
-        sessions.isEmpty && weekOffset >= 0 && !isLoading
+        displayWeekSessions.isEmpty && weekOffset >= 0 && !isLoading
     }
 
     // MARK: - Data Loading
@@ -144,10 +160,14 @@ final class WeekViewModel {
 
     private func loadSessions(client: SupabaseClient) async {
         let (start, end) = Self.weekBounds(offset: weekOffset)
+        // Fetch one extra leading day so the Monday row can see the prior
+        // Sunday's session for recovery-day detection.
+        let cal = Calendar(identifier: .gregorian)
+        let queryStart = cal.date(byAdding: .day, value: -1, to: start) ?? start
         do {
             sessions = try await client.from("training_sessions")
                 .select()
-                .gte("session_date", value: Self.ymd(start))
+                .gte("session_date", value: Self.ymd(queryStart))
                 .lte("session_date", value: Self.ymd(end))
                 .order("session_date")
                 .execute()
@@ -331,6 +351,7 @@ struct WeekView: View {
                 DayRowView(
                     date: day.date,
                     session: day.session,
+                    previousSessionType: day.previousSessionType,
                     userProfile: viewModel.userProfile,
                     raceDate: viewModel.race?.raceDate,
                     meals: viewModel.meals

@@ -5,7 +5,7 @@ import {
   encryptToken,
   importEncryptionKey,
 } from "../_shared/token-crypto.ts";
-import { generateAndSaveMacroTarget } from "../_shared/macroEngine.ts";
+import { generateAndSaveMacroTarget, resolveRaceSessionType } from "../_shared/macroEngine.ts";
 import { sendPush } from "../_shared/apns.ts";
 
 const VERIFY_TOKEN = Deno.env.get("STRAVA_WEBHOOK_VERIFY_TOKEN") ?? "";
@@ -185,10 +185,13 @@ serve(async (req: Request) => {
       return new Response("OK", { status: 200 });
     }
 
-    const sessionType = mapSessionType(
-      activity.workout_type as number | null
-    );
     const distanceKm = (activity.distance as number) / 1000;
+    // Split a Strava "race" (workout_type=1, no distance signal) into the
+    // race_5k/10k/half/marathon session type by actual distance run.
+    const sessionType = resolveRaceSessionType(
+      mapSessionType(activity.workout_type as number | null),
+      distanceKm,
+    );
     const durationMins = Math.round((activity.moving_time as number) / 60);
     // start_date_local is the local clock time expressed as if UTC — take date part only
     const sessionDate = (activity.start_date_local as string).substring(0, 10);
