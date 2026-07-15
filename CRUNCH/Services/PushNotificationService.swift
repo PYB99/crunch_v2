@@ -49,6 +49,23 @@ final class PushNotificationService: NSObject, UNUserNotificationCenterDelegate 
         }
     }
 
+    // App-level push opt-out: nulls the stored token so the backend has nothing
+    // to send to. Mirror image of storeDeviceToken. Also called on sign-out
+    // (while the session is still valid) to prevent user A's pushes reaching
+    // user B on a shared device. Cannot revoke the OS-level permission — that's
+    // the user's to change in system Settings.
+    func clearDeviceToken() async {
+        do {
+            let client = try await SupabaseService.shared.authenticatedClient()
+            try await client
+                .from("users")
+                .update(["apns_device_token": String?.none])
+                .execute()
+        } catch {
+            logger.error("clearDeviceToken failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     // MARK: - UNUserNotificationCenterDelegate
 
     func userNotificationCenter(

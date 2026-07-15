@@ -40,6 +40,15 @@ struct ContentView: View {
         .task {
             try? await Clerk.shared.refreshClient()
         }
+        .task(id: clerk.user?.id) {
+            // When a session becomes active, attach analytics + subscription
+            // identity to the Clerk user id. Idempotent — safe to re-run. This
+            // is the prerequisite for Mixpanel event attribution and Phase 9's
+            // RevenueCat entitlement lookups.
+            guard let userId = clerk.user?.id else { return }
+            MixpanelService.identify(clerkUserId: userId)
+            RevenueCatService.shared.identifyUser(clerkUserId: userId)
+        }
     }
 }
 

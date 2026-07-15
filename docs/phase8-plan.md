@@ -55,6 +55,7 @@ Phase 8 checklist from AGENTS.md, in dependency order within the phase:
 | 13 | Mixpanel dashboard verification | 9 | — | Onboarding events deferred |
 | 14 | Full regression | all | — | **Rewritten** — §6 |
 | 15 | Final security audit (11 rules) | all | — | none |
+| 16 | FeedbackView — mail-composer screen from the new Settings row | 2 | new; **no DB table, no Edge Function** — reuses `MFMailComposeViewController` (mailto: fallback) | Recipient `prakashbhagat2006@gmail.com` (§2); TestFlight built-in feedback stays the primary beta channel |
 
 `IntegrationsView`, `StravaOAuthService`, `RunnaService`, `AppRouter`, deep-link plumbing: **already done — nothing in this plan touches them** except adding rows/links around them. `StravaOAuthService`/`RunnaService` public signatures are frozen (Screen 15 call site pending).
 
@@ -75,7 +76,7 @@ Replace the single-row body with the spec's 7-row `List`, preserving the existin
   - `var isPro: Bool` (read from `RevenueCatService.shared`)
   - `var isLoading: Bool`, `var errorMessage: String?`
   - `func load() async` — one authenticated client; reads `users` (by RLS), `races` where `is_active`, reuses `StravaOAuthService.fetchStatus()` / `RunnaService.fetchStatus()`, `UNUserNotificationCenter.current().notificationSettings()`
-- Rows → `NavigationLink` per spec table: My Race (race name detail) → `RaceEditView`; Personal Info (height/weight summary) → `PersonalInfoView`; Integrations (Strava/Runna status) → existing `IntegrationsView`; Notifications (On/Off) → `NotificationsView`; Units (Metric/Imperial) → `UnitsView`; Subscription (Active/Trial — **status-only, Phase 9 stub**); Account (email) → `AccountView`.
+- Rows → `NavigationLink` per spec table: My Race (race name detail) → `RaceEditView`; Personal Info (height/weight summary) → `PersonalInfoView`; Integrations (Strava/Runna status) → existing `IntegrationsView`; Notifications (On/Off) → `NotificationsView`; Units (Metric/Imperial) → `UnitsView`; Feedback (no detail) → `FeedbackView`; Subscription (Active/Trial — **status-only, Phase 9 stub**); Account (email) → `AccountView`.
 - Reads from: `SupabaseService`, `StravaOAuthService`, `RunnaService`, `RevenueCatService`, `UNUserNotificationCenter`. Writes: nothing.
 - `.task { await viewModel.load() }` **re-runs a lightweight refresh on re-appear** so detail rows update after child-screen edits (see failure mode 1).
 
@@ -131,6 +132,21 @@ Edit the active race, or create one if none exists (this is the onboarding stand
   - `func deleteAccount() async -> Bool` — delegates to `AccountService.deleteAccount()`
 - UI: email row; "Sign Out" button — **immediate, no confirmation** (spec); "Delete Account" destructive button — **`.confirmationDialog` required** (spec — note this is deliberately different from IntegrationsView's `.alert`; both match the spec's confirmation table).
 - On successful delete or sign-out, `ContentView` routes back to Splash automatically via `clerk.session == nil` — no manual navigation needed.
+
+**`CRUNCH/Features/Settings/FeedbackView.swift` — NEW (checklist item 16)**
+A single screen reachable from the new Settings **Feedback** row. **No new database table for v1** — use a mail composer (`MFMailComposeViewController` bridged to SwiftUI via `UIViewControllerRepresentable`, or a `mailto:` URL as a simpler fallback if `MFMailComposeViewController` adds meaningful complexity) pre-filled with:
+
+- recipient — `prakashbhagat2006@gmail.com` (confirmed 2026-07-15; revisit if a dedicated `support@` alias exists by launch)
+- subject — `"Crunch Feedback"`
+- body — a template that **auto-includes app version, build number, and iOS version** (user-editable, not hidden): read `CFBundleShortVersionString` / `CFBundleVersion` from `Bundle.main` and `UIDevice.current.systemVersion`.
+
+**No new Edge Function, no new Supabase table** — kept minimal for beta scale (3–5 testers).
+
+Fallback: if the device has no mail account configured (`MFMailComposeViewController.canSendMail() == false`), fall back to a simple in-app text field that **copies the same info (recipient + subject + version-stamped body) to the clipboard** with instructions to email it manually.
+
+- Reads: `Bundle.main`, `UIDevice.current`. Writes: nothing (no persistence).
+
+> **Rationale:** TestFlight's own built-in feedback (screenshot-to-send) remains the primary beta feedback channel and needs no code — this Settings row is the persistent, always-available path for both beta and post-launch, kept deliberately lightweight rather than building a feedback-table + triage-dashboard system that doesn't match current user volume.
 
 ### Services / backend
 

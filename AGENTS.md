@@ -780,6 +780,7 @@ Day rows (`List` or `LazyVStack`):
 | Integrations | Strava + Runna status |
 | Notifications | On/Off |
 | Units | Metric / Imperial |
+| Feedback | (none — pushes a report screen) |
 | Subscription | Active / Trial / Upgrade |
 | Account | Email + sign out + delete (destructive) |
 

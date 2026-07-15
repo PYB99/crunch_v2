@@ -7,6 +7,11 @@ nonisolated enum Constants {
     // MARK: - Supabase (public — safe to commit)
     static let supabaseURL = "https://ryswtwcgzhmkmgzcklyx.supabase.co"
 
+    // MARK: - Edge Function URLs
+    // Most function calls build their URL inline; the destructive
+    // delete-account endpoint is named here so its one call site is explicit.
+    static let deleteAccountFunctionURL = "\(supabaseURL)/functions/v1/delete-account"
+
     // MARK: - Strava
     static let stravaClientID   = "251794"
     static let stravaRedirectURI = "crunch://strava-callback"
