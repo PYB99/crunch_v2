@@ -210,6 +210,7 @@ Auth identity is the Clerk user ID (text, format `user_xxx`), read by `requestin
 | gender | text | 'male' or 'female' |
 | units | text | 'metric' or 'imperial' |
 | training_level | text | 'beginner', 'intermediate', 'advanced' |
+| diet | text | 'omnivore','vegetarian','vegan','pescatarian' — CHECK-constrained (Phase 5). Nullable; engine falls back to omnivore |
 | weekly_activities | jsonb | Array of activity types |
 | has_completed_onboarding | boolean | Default false |
 | created_at | timestamptz | |
@@ -786,37 +787,26 @@ Day rows (`List` or `LazyVStack`):
 
 Delete account: `.confirmationDialog` required.
 
-### Onboarding Flow (17 screens)
+### Onboarding Flow (33 screens — v3 story flow, Phase 5)
 
-`NavigationStack` managed by `OnboardingCoordinator` (`@Observable`). All state held in coordinator — never lost between screens.
+Data-driven step engine (`OnboardingStep` enum + `OnboardingData` bag + `@Observable OnboardingCoordinator`), **not** 33 hardcoded pushes. Source of truth for order/visuals: `docs/crunch-onboarding-v3-mockup.html` (dark theme only — the "dawn" variant is a dev tool). This **supersedes** the earlier 17-screen spec. All 31 mockup screens plus two inserts: **Attribution** (after "3 · The solution") and **Rating request** (SKStoreReviewController, after "29 · Plan reveal").
 
-| # | View | Title | Input | Advance |
-|---|---|---|---|---|
-| 1 | Screen01ScienceView | Built on proven sports nutrition science | 3 citation cards | Continue |
-| 2 | Screen02RaceTypeView | What are you training for? | 5K/10K/Half/Marathon/Ultra/Other | Auto (0.3s delay) |
-| 3 | Screen03RaceDetailsView | What's it called and when is it? | TextField + DatePicker | Continue |
-| 4 | Screen04HookView | {Race} is in {X} days | Dynamic text (brand colour on number) | Continue |
-| 5 | Screen05GenderView | What's your biological sex? | Male / Female | Auto |
-| 6 | Screen06AgeView | How old are you? | Picker wheel 16–80 | Continue |
-| 7 | Screen07WeightView | What's your current weight? | Picker + metric/imperial toggle | Continue |
-| 8 | Screen08HeightView | How tall are you? | Picker + same toggle persists | Continue |
-| 9 | Screen09TrainingLevelView | How serious is your training? | Beginner/Intermediate/Advanced | Auto |
-| 10 | Screen10ActivitiesView | Do you do anything else during the week? | Multi-select (gym upper/lower/full, cycling, swimming, other, nothing) | Continue |
-| 11 | Screen11BreakfastView | What do you usually have for breakfast? | TextEditor + "I don't eat breakfast" + "Add another" | Continue |
-| 12 | Screen12LunchView | What about lunch? | Same | Continue |
-| 13 | Screen13DinnerView | And dinner? | Same | Continue |
-| 14 | Screen14ReadinessView | Fueling readiness | Spider chart | Continue |
-| 15 | Screen15ConnectAppsView | Connect your apps | Strava + Runna + Skip | Continue |
-| 16 | Screen16CreateAccountView | Save your fuel plan | Email + password + privacy note | Create account |
-| 17 | Screen17PlanReadyView | Your race fuel plan is ready! | Race + countdown + curve | Start My Plan |
+Screens are rendered by shared archetypes (SingleSelect / MultiSelect / BigNumberSlider / MealEntry / Statement / Letter) + bespoke views (Welcome, SolutionRings, CinematicScene, LiveAnswer, ConnectApps, OutcomeProjection, Building, CreateAccount, PlanReveal, RatingRequest, NotificationPrePrompt, Paywall). Files live in `Features/Onboarding/` (`Screens/`, `Components/`) with an onboarding-only palette in `OnboardingTheme.swift` (`OB`) and cream CTAs.
 
-**Onboarding UX Rules:**
-- `OnboardingProgressBar` on all screens except 17
-- Back always available (`.navigationBarBackButtonHidden(false)`)
-- Single-select auto-advances with 0.3s delay
-- `OnboardingCoordinator` holds all state — never lost between screens
-- No body composition question — ever
-- Pickers: `.pickerStyle(.wheel)`
+Order (act → screens): **Act 1** Welcome · Problem · Solution · Attribution · Name · Race type · Race details · Hook(94 days). **Act 2** Sex · Age · Weight · Height · Training level · Longest run · Activities · Pain points · Reflection · Bombshell(2 dinners) · Bridge. **Act 3** Diet · Breakfast · Lunch · Dinner · Live answer · Connect apps. **Act 4** Outcome projection · Building · Commitment · **Create account** · Plan reveal · Rating request · Notification pre-prompt · Paywall.
+
+**Account/purchase architecture (final):**
+- Account creation at **Create account** (before the paywall). All onboarding data is held locally in the coordinator until then — **zero Supabase writes** before account creation. `OnboardingSubmitter` then writes users/race/meals/macro-target in one pass.
+- `Purchases.logIn(clerkId)` (via `RevenueCatService.identifyUser`) fires right after account creation. 7-day trial.
+- Paywall + RevenueCat purchase ship in Phase 5 (pulled forward from Phase 9, which keeps restore/archive/TestFlight).
+
+**Diet layer (screen "Diet", master-spec §9):** protein digestibility modifier (§2.4) + low-carb conflict flag (§9.2, Coach copy in `Constants.dietCarbConflictCoachCopy`) live in `MacroEngine`/`DietLayer`. Diet type only; exclusions/allergies deferred (§9.3, meal-library filtering).
+
+**Analytics-only signals (no user columns):** attribution, longest run, pain points, commitment → Mixpanel (`onboardingStarted`/`onboardingScreenViewed`/`onboardingCompleted` + person properties).
+
+**UX rules:** progress bar + back on the form spine (not on statement/scene/celebration screens); single-select auto-advances 0.3s; sliders replace `.wheel` pickers; Fraunces → system serif (New York); confetti/count-up honour Reduce Motion; no body-composition question, ever.
+
+**Routing:** `ContentView` gates on `AppState.onboardingComplete` (+ `isActivelyOnboarding` so the mid-flow session flip at account creation doesn't tear the coordinator down). Authed-but-incomplete resumes at Plan reveal.
 
 ---
 
@@ -1071,23 +1061,26 @@ Use `NWPathMonitor`. Cache in SwiftData.
 
 **Exit criteria:** Today tab shows real portions. Unit tests pass.
 
-### Phase 5 — Onboarding (17 screens)
+### Phase 5 — Onboarding (33-screen v3 story flow)
 
-- [ ] `Features/Onboarding/OnboardingCoordinator.swift` — `@Observable`, holds all state
-- [ ] `OnboardingProgressBar.swift`
-- [ ] All 17 screen views per table in spec
-- [ ] Auto-advance single-select (0.3s delay)
-- [ ] `.pickerStyle(.wheel)` for age, weight, height
-- [ ] Multi-select screen 10 with "Nothing else" deselects all
-- [ ] `TextEditor` meal screens 11–13 with skip + add another
-- [ ] Wire meals → `estimate-meal` → `meals` table
-- [ ] Write all data to Supabase on account creation (screen 16)
-- [ ] Initial macro target generation post-signup
-- [ ] Screen 17 → push notification permission request → Today tab
-- [ ] Full flow test on device. Verify Supabase: meals, race, user, macro_targets
+Replaces the 17-screen spec with the v3 mockup's 31 screens + 2 inserts (Attribution, Rating request). Data-driven step engine; account creation before the paywall; diet layer (§9) shipped alongside the Diet screen. Built 2026-07-17 — see the 33-screen flow section above.
+
+- [x] `OnboardingStep` / `OnboardingData` / `OnboardingCoordinator` (data-driven, `@Observable`)
+- [x] `OnboardingContainerView` + `OnboardingTheme` (OB palette) + shared components (CTA, TopBar, OptionRow, Confetti, CountUp, PortionRings, ProjectionChart)
+- [x] All 33 screens via archetypes + bespoke views
+- [x] Auto-advance single-select (0.3s); sliders (age/weight/height/longest run) with metric/imperial toggle
+- [x] Multi-select with "Nothing else" exclusivity; meal screens with skip + add another
+- [x] Diet layer: `MacroEngine`/`DietLayer` protein modifier + conflict flag; `users.diet` migration (CHECK-constrained)
+- [x] `OnboardingSubmitter` — create-user-profile → users update → race → meals (via `estimate-meal`) → seed macro target
+- [x] Paywall + RevenueCat purchase (pulled forward from Phase 9); `Purchases.logIn` at account creation
+- [x] Rating request (SKStoreReviewController) + notification pre-prompt
+- [x] Routing rewrite (`AppState`) resilient to the mid-flow session flip; resume at Plan reveal
+- [x] Mixpanel onboarding events + analytics-only signal properties
+- [x] Builds clean (iPhone 17 sim, iOS 26.5 SDK)
+- [ ] **Device test (prakash):** full flow; verify Supabase users/race/meals; RevenueCat sandbox purchase; APNs prompt. (Sim launch blocked by CoreSimulator code-4 + empty `REVENUECAT_PUBLIC_KEY` in this env.)
 - [ ] **Security audit**
 
-**Exit criteria:** Full 17-screen flow works. All data in Supabase. Today tab shows real personalised portions.
+**Exit criteria:** Full 33-screen flow works on device. All data in Supabase after account creation. Today tab shows real personalised portions.
 
 ### Phase 6 — Nutrition Tab & Week Tab
 

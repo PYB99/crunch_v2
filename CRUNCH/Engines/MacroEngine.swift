@@ -17,9 +17,11 @@ enum TrainingPhase: String {
 //
 // Scope note (master-spec Section 14, items 1–6 only): this is a targeted upgrade
 // of the single-value engine, NOT the full 8-layer rebuild. Training-level carb
-// bands (§4.1 columns), race/age/diet modifiers, phase carb multipliers, and the
+// bands (§4.1 columns), race/age modifiers, phase carb multipliers, and the
 // new phase detection (§7.1 post_race_recovery) are deferred to the Section 7–12
-// phase. Representative Band-B values stand in where a band table would apply.
+// phase. The diet layer (§2.4 protein modifier + §9.2 low-carb conflict flag) is
+// implemented here (Phase 5). Representative Band-B values stand in where a band
+// table would apply.
 enum MacroEngine {
 
     // MARK: - Public
@@ -63,8 +65,12 @@ enum MacroEngine {
             : carbsPerKg(type) * kg
 
         // Protein: 1.7 g/kg baseline; recovery day 2.0 g/kg (§5.1 in-scope subset).
-        // Taper 1.85 / post-race 2.2 / age / diet modifiers are deferred.
-        var proteinG = (type == "recovery_day" ? 2.0 : 1.7) * kg
+        // Diet digestibility modifier (§2.4) scales the per-kg target before any
+        // activity additions (which are fixed absolute grams). Taper 1.85 /
+        // post-race 2.2 / age modifiers remain deferred.
+        let baseProteinPerKg: Double = (type == "recovery_day" ? 2.0 : 1.7)
+        let dietModifier = DietLayer.proteinModifier(for: user.diet)
+        var proteinG = baseProteinPerKg * kg * dietModifier
 
         // Secondary activity adjustments (interim additive model — Section 11's
         // MET/EEE→TDEE routing is deferred; these deltas are applied pre-fat so
@@ -80,10 +86,18 @@ enum MacroEngine {
         }
 
         // Fat Engine (§6.1) — 20% floor / 35% ceiling + both reconciliation fixes.
-        let (fatG, adjustedCarbsG, flags) = calculateFat(
+        let (fatG, adjustedCarbsG, fatFlags) = calculateFat(
             tdee: tdee, carbsG: carbsG, proteinG: proteinG, kg: kg, type: type
         )
         carbsG = adjustedCarbsG
+
+        // Low-carb/keto conflict (§9.2): raise a coaching flag, never override the
+        // carb target. Not reachable from onboarding (only omni/veg/vegan/pesc are
+        // offered) but honoured for imported/edited profiles.
+        var flags = fatFlags
+        if DietLayer.isLowCarbConflict(user.diet) {
+            flags.append(DietLayer.dietCarbConflictFlag)
+        }
 
         return MacroTarget(
             carbsG: carbsG,

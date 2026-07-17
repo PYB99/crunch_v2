@@ -18,6 +18,13 @@ enum MixpanelService {
     static func track(_ event: AnalyticsEvent) {
         Mixpanel.mainInstance().track(event: event.name, properties: event.properties)
     }
+
+    // Person-level properties. Used at the end of onboarding for the signals we
+    // keep in analytics only, not as user columns (attribution, longest run,
+    // pain points, commitment — Phase 5 decision 1).
+    static func setUserProperties(_ properties: [String: MixpanelType]) {
+        Mixpanel.mainInstance().people.set(properties: properties)
+    }
 }
 
 // MARK: - Events

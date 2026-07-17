@@ -311,6 +311,63 @@ struct MacroEngineTests {
         }
     }
 
+    // MARK: - §9 Diet layer (protein modifier + low-carb conflict flag)
+
+    @Test func omnivoreAndPescatarianAreProteinReference() {
+        let omni = MacroEngine.calculate(
+            user: UserProfile(weightKg: 75, heightCm: 178, age: 32, gender: "male",
+                              trainingLevel: "intermediate", diet: "omnivore"),
+            raceDate: nil, sessionType: "rest")
+        let pesc = MacroEngine.calculate(
+            user: UserProfile(weightKg: 75, heightCm: 178, age: 32, gender: "male",
+                              trainingLevel: "intermediate", diet: "pescatarian"),
+            raceDate: nil, sessionType: "rest")
+        #expect(abs(omni.proteinG - 1.7 * 75.0) < 0.01)          // ×1.00
+        #expect(abs(pesc.proteinG - omni.proteinG) < 0.01)       // pescatarian == omnivore
+    }
+
+    @Test func vegetarianScalesProteinBy1_05() {
+        let veg = MacroEngine.calculate(
+            user: UserProfile(weightKg: 75, heightCm: 178, age: 32, gender: "male",
+                              trainingLevel: "intermediate", diet: "vegetarian"),
+            raceDate: nil, sessionType: "rest")
+        #expect(abs(veg.proteinG - 1.7 * 75.0 * 1.05) < 0.01)
+    }
+
+    @Test func veganScalesProteinBy1_10() {
+        let vegan = MacroEngine.calculate(
+            user: UserProfile(weightKg: 75, heightCm: 178, age: 32, gender: "male",
+                              trainingLevel: "intermediate", diet: "vegan"),
+            raceDate: nil, sessionType: "rest")
+        #expect(abs(vegan.proteinG - 1.7 * 75.0 * 1.10) < 0.01)
+    }
+
+    @Test func dietModifierAppliesBeforeActivityAdditions() {
+        // Diet scales the g/kg base; the +15g gym_lower addition is fixed and
+        // must NOT be scaled by the modifier.
+        let vegan = MacroEngine.calculate(
+            user: UserProfile(weightKg: 75, heightCm: 178, age: 32, gender: "male",
+                              trainingLevel: "intermediate", diet: "vegan"),
+            raceDate: nil, sessionType: "rest", additionalActivities: [.gymLower])
+        #expect(abs(vegan.proteinG - (1.7 * 75.0 * 1.10 + 15)) < 0.01)
+    }
+
+    @Test func lowCarbRaisesConflictFlagWithoutOverridingCarbs() {
+        // Keto isn't an onboarding option, but an imported profile must flag, not
+        // silently comply or silently prescribe. Carbs stay identical to omnivore.
+        let keto = MacroEngine.calculate(
+            user: UserProfile(weightKg: 75, heightCm: 178, age: 32, gender: "male",
+                              trainingLevel: "intermediate", diet: "keto"),
+            raceDate: nil, sessionType: "long_run")
+        let omni = MacroEngine.calculate(
+            user: UserProfile(weightKg: 75, heightCm: 178, age: 32, gender: "male",
+                              trainingLevel: "intermediate", diet: "omnivore"),
+            raceDate: nil, sessionType: "long_run")
+        #expect(keto.flags.contains("diet_carb_conflict"))
+        #expect(abs(keto.carbsG - omni.carbsG) < 0.01)   // no carb override
+        #expect(!omni.flags.contains("diet_carb_conflict"))
+    }
+
     @Test func progressiveOverloadOrderingHolds() {
         for lvl in ["beginner", "intermediate", "advanced"] {
             let u = UserProfile(weightKg: 70, heightCm: 175, age: 30, gender: "male", trainingLevel: lvl)

@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crunch — Onboarding v3 (31-screen story flow)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,550;0,9..144,650;1,9..144,450;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============ WORKBENCH CHROME (not part of the app design) ============ */
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { height:100%; }
+body {
+  font-family:'Inter',system-ui,sans-serif;
+  background:#111013;
+  color:#CFC9C0;
+  display:flex; flex-direction:column; align-items:center;
+  overflow:hidden;
+}
+.bench-bar {
+  width:100%; display:flex; align-items:center; justify-content:space-between;
+  padding:14px 20px; gap:16px; flex-wrap:wrap;
+}
+.bench-title { font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:#8A8378; }
+.bench-title b { color:#E8E2D8; font-weight:600; }
+.bench-title span.act { color:#63C08F; font-weight:600; margin-left:8px; text-transform:none; letter-spacing:0; }
+.theme-toggle { display:flex; background:#1D1B20; border:1px solid #2E2B31; border-radius:99px; padding:3px; }
+.theme-toggle button {
+  border:0; background:transparent; color:#8A8378; font:600 12px 'Inter';
+  padding:7px 16px; border-radius:99px; cursor:pointer; transition:all .2s;
+}
+.theme-toggle button.active { background:#E8E2D8; color:#191714; }
+.bench-nav { display:flex; align-items:center; gap:10px; }
+.bench-nav button {
+  width:34px; height:34px; border-radius:50%; border:1px solid #2E2B31;
+  background:#1D1B20; color:#CFC9C0; font-size:15px; cursor:pointer;
+}
+.bench-nav button:hover { background:#2A272E; }
+.screen-label { font-size:12px; color:#8A8378; min-width:230px; text-align:center; }
+.screen-label b { color:#E8E2D8; }
+.dots { display:flex; gap:5px; justify-content:center; padding:10px 0 12px; flex-wrap:wrap; max-width:900px; }
+.dots span { width:6px; height:6px; border-radius:50%; background:#2E2B31; cursor:pointer; transition:background .2s; }
+.dots span.on { background:#E8E2D8; }
+.dots span.act1 { outline:1px solid #E8703A44; }
+.dots span.act2 { outline:1px solid #DFAF5644; }
+.dots span.act3 { outline:1px solid #63C08F44; }
+.dots span.act4 { outline:1px solid #F5F1EA44; }
+.stage { flex:1; display:flex; align-items:center; justify-content:center; width:100%; overflow:hidden; }
+
+/* ============ PHONE FRAME ============ */
+.phone-wrap { transform-origin:center center; }
+.phone {
+  width:390px; height:844px; border-radius:54px; overflow:hidden; position:relative;
+  border:10px solid #050505; box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 0 1px #333;
+  background:var(--bg);
+}
+.notch { position:absolute; top:10px; left:50%; transform:translateX(-50%);
+  width:120px; height:30px; background:#050505; border-radius:20px; z-index:50; }
+
+/* ============ THEME TOKENS ============ */
+.phone[data-theme="dark"] {
+  --bg:#0A0A0A;
+  --ink:#FFFFFF; --ink2:#A8A29A; --ink3:#6E6862;
+  --card:#161616; --card-border:#262626;
+  --ember:#E8703A; --jade:#63C08F; --gold:#DFAF56;
+  --cta-bg:#F5F1EA; --cta-ink:#141210;
+  --track:#2A2A2A; --track-fill:#F5F1EA;
+  --scene-good:radial-gradient(130% 80% at 50% 22%, #22422E 0%, #101B10 52%, #0A0A0A 100%);
+  --scene-bad:radial-gradient(130% 80% at 50% 22%, #472310 0%, #1A0E08 52%, #0A0A0A 100%);
+  --scene-neutral:radial-gradient(130% 80% at 50% 22%, #3A2F18 0%, #16130A 52%, #0A0A0A 100%);
+  --scene-glow-good:rgba(99,192,143,.4);
+  --scene-glow-bad:rgba(232,112,58,.4);
+  --scene-glow-neutral:rgba(223,175,86,.4);
+  --cone-good:rgba(146,215,175,.16);
+  --cone-bad:rgba(240,150,96,.16);
+  --cone-neutral:rgba(230,190,120,.16);
+  --pool-good:rgba(146,215,175,.20);
+  --pool-bad:rgba(240,150,96,.20);
+  --pool-neutral:rgba(230,190,120,.20);
+  --obj-body:#101010; --obj-body2:#1E1A16;
+  --radar-fill:rgba(99,192,143,.22); --radar-line:#63C08F; --radar-grid:#2C2C2C;
+  --chart-with:#63C08F; --chart-without:#4A4A4A;
+  --plan-badge-bg:rgba(223,175,86,.14); --plan-badge-ink:#DFAF56;
+  --hero-sky-top:#0C1320; --hero-sky-mid:#3B2B26; --hero-sky-low:#945123;
+  --hero-sun-core:#FFE7C0; --hero-sun:#F08A4A;
+  --hero-r-far:#54402F; --hero-r-mid:#2B211A; --hero-r-near:#181109; --hero-r-fg:#0A0705;
+  --hero-mist:rgba(255,196,138,.18);
+  --hero-runner:#060504;
+}
+.phone[data-theme="dawn"] {
+  --bg:#FAF6EF;
+  --ink:#241C13; --ink2:#6E6255; --ink3:#A2937F;
+  --card:#FFFDF8; --card-border:#E9DDCB;
+  --ember:#C4622D; --jade:#2F6B52; --gold:#A97F26;
+  --cta-bg:#C4622D; --cta-ink:#FFF6EC;
+  --track:#E9DDCB; --track-fill:#241C13;
+  --scene-good:linear-gradient(180deg, #CFE5D3 0%, #E7EFDD 46%, #FAF6EF 100%);
+  --scene-bad:linear-gradient(180deg, #ECC49E 0%, #F3DDC2 48%, #FAF6EF 100%);
+  --scene-neutral:linear-gradient(180deg, #F0E2BE 0%, #F6EDD8 48%, #FAF6EF 100%);
+  --scene-glow-good:rgba(47,107,82,.30);
+  --scene-glow-bad:rgba(150,72,28,.30);
+  --scene-glow-neutral:rgba(169,127,38,.30);
+  --cone-good:rgba(255,255,255,.5);
+  --cone-bad:rgba(255,246,230,.55);
+  --cone-neutral:rgba(255,248,232,.55);
+  --pool-good:rgba(255,255,255,.65);
+  --pool-bad:rgba(255,246,230,.7);
+  --pool-neutral:rgba(255,248,232,.7);
+  --obj-body:#2C2318; --obj-body2:#41352A;
+  --radar-fill:rgba(47,107,82,.18); --radar-line:#2F6B52; --radar-grid:#DED2BE;
+  --chart-with:#2F6B52; --chart-without:#CBBFA9;
+  --plan-badge-bg:rgba(169,127,38,.12); --plan-badge-ink:#A97F26;
+  --hero-sky-top:#A9C2D8; --hero-sky-mid:#EBD2AC; --hero-sky-low:#F4C388;
+  --hero-sun-core:#FFF6E2; --hero-sun:#E8873E;
+  --hero-r-far:#C9B896; --hero-r-mid:#9B8762; --hero-r-near:#6C5C40; --hero-r-fg:#4C3F2B;
+  --hero-mist:rgba(255,242,220,.55);
+  --hero-runner:#241C13;
+}
+
+/* ============ SHARED APP PIECES ============ */
+.screen {
+  position:absolute; inset:0; display:none; flex-direction:column;
+  padding:64px 26px 30px; color:var(--ink); background:var(--bg);
+  overflow-y:auto;
+}
+.screen.on { display:flex; }
+.serif { font-family:'Fraunces',serif; }
+
+.topnav { display:flex; align-items:center; gap:14px; margin-bottom:22px; flex:0 0 auto; }
+.backbtn {
+  width:38px; height:38px; border-radius:50%; flex:0 0 auto;
+  background:var(--card); border:1px solid var(--card-border);
+  color:var(--ink); display:flex; align-items:center; justify-content:center; font-size:15px;
+}
+.progress { flex:1; height:3px; border-radius:99px; background:var(--track); overflow:hidden; }
+.progress i { display:block; height:100%; background:var(--track-fill); border-radius:99px; }
+
+.q-title { font-family:'Fraunces',serif; font-size:29px; font-weight:600; line-height:1.16; letter-spacing:-.01em; margin-bottom:10px; }
+.q-sub { font-size:15px; color:var(--ink2); line-height:1.5; margin-bottom:26px; }
+
+.cta {
+  margin-top:auto; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center;
+  height:58px; border-radius:29px; background:var(--cta-bg); color:var(--cta-ink);
+  font:600 17px 'Inter'; letter-spacing:.01em; cursor:pointer;
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+  transition:transform .12s cubic-bezier(.34,1.56,.64,1), box-shadow .12s ease;
+}
+.cta:active { transform:scale(.965); box-shadow:0 4px 14px rgba(0,0,0,.16); }
+.cta.secondary { background:transparent; box-shadow:none; color:var(--ink2); height:auto; margin-top:14px; font-size:14px; text-decoration:underline; text-underline-offset:3px; }
+.cta.secondary:active { transform:scale(.98); }
+.cta.ghost { background:var(--card); color:var(--ink); box-shadow:none; border:1px solid var(--card-border); }
+.cta.small { height:auto; padding:14px; font-size:15px; margin-top:12px; }
+
+/* Options — no icons; type, spacing, and a little spring carry the personality */
+.optlist { flex:0 0 auto; }
+.opt {
+  display:flex; align-items:center; gap:14px; padding:20px 20px; margin-bottom:12px;
+  background:var(--card); border:1px solid var(--card-border); border-radius:18px;
+  font-size:16.5px; font-weight:500; cursor:pointer;
+  transition:border-color .15s ease, transform .16s cubic-bezier(.34,1.56,.64,1), background .2s ease;
+  opacity:0; transform:translateY(10px);
+  animation:optIn .5s cubic-bezier(.22,1,.36,1) forwards;
+}
+.opt:nth-of-type(1) { animation-delay:.05s; } .opt:nth-of-type(2) { animation-delay:.12s; }
+.opt:nth-of-type(3) { animation-delay:.19s; } .opt:nth-of-type(4) { animation-delay:.26s; }
+.opt:nth-of-type(5) { animation-delay:.33s; } .opt:nth-of-type(6) { animation-delay:.4s; }
+@keyframes optIn { to{opacity:1; transform:translateY(0)} }
+.opt:hover { border-color:var(--ember); }
+.opt:active { transform:scale(.975); }
+.opt.picked { border-color:var(--ember); background:color-mix(in srgb, var(--ember) 8%, var(--card)); }
+.opt .sub { display:block; font-size:12.5px; color:var(--ink2); font-weight:400; margin-top:3px; }
+.opt .radio {
+  margin-left:auto; width:24px; height:24px; border-radius:50%; border:2px solid var(--ink3); flex:0 0 auto;
+  position:relative; transition:border-color .2s ease, transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.opt .radio::after {
+  content:""; position:absolute; inset:4px; border-radius:50%; background:var(--ember);
+  transform:scale(0); transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.opt.picked .radio { border-color:var(--ember); transform:scale(1.08); }
+.opt.picked .radio::after { transform:scale(1); }
+/* multi-select variant: square check instead of round radio */
+.opt .box {
+  margin-left:auto; width:24px; height:24px; border-radius:7px; border:2px solid var(--ink3); flex:0 0 auto;
+  position:relative; transition:border-color .2s ease, transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.opt .box::after {
+  content:""; position:absolute; inset:3px; border-radius:4px; background:var(--ember);
+  transform:scale(0); transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.opt.picked .box { border-color:var(--ember); transform:scale(1.05); }
+.opt.picked .box::after { transform:scale(1); }
+.hint { font-size:12.5px; color:var(--ink3); text-align:center; margin-top:16px; }
+
+/* confetti burst — brand colours only, one-time celebration, never a game mechanic */
+.confetti-piece {
+  position:absolute; top:50%; left:50%; width:7px; height:7px; border-radius:2px;
+  pointer-events:none; opacity:0;
+}
+@keyframes confettiBurst {
+  0%   { opacity:1; transform:translate(-50%,-50%) rotate(0deg) scale(1); }
+  100% { opacity:0; transform:translate(var(--tx),var(--ty)) rotate(var(--rot)) scale(.4); }
+}
+
+/* ============ CINEMATIC SCENES (bad / good / neutral) ============ */
+.scene { flex:1; display:flex; flex-direction:column; }
+.scene .art {
+  flex:1.2; position:relative; overflow:hidden;
+  margin:-64px -26px 0; /* full-bleed */
+  display:flex; align-items:center; justify-content:center;
+}
+.scene.good .art { background:var(--scene-good); }
+.scene.bad  .art { background:var(--scene-bad); }
+.scene.neutral .art { background:var(--scene-neutral); }
+
+.grain::before {
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:3;
+  opacity:.45; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+.phone[data-theme="dawn"] .grain::before { opacity:.28; }
+
+.scene .cone {
+  position:absolute; top:-6%; left:50%; transform:translateX(-50%);
+  width:380px; height:86%; pointer-events:none; z-index:1;
+}
+.scene.good .cone { background:radial-gradient(46% 88% at 50% 0%, var(--cone-good) 0%, transparent 72%); }
+.scene.bad  .cone { background:radial-gradient(46% 88% at 50% 0%, var(--cone-bad) 0%, transparent 72%); }
+.scene.neutral .cone { background:radial-gradient(46% 88% at 50% 0%, var(--cone-neutral) 0%, transparent 72%); }
+.scene .pool {
+  position:absolute; left:50%; bottom:15%; transform:translateX(-50%);
+  width:240px; height:44px; border-radius:50%; z-index:1; filter:blur(6px);
+}
+.scene.good .pool { background:radial-gradient(50% 50% at 50% 50%, var(--pool-good), transparent 70%); }
+.scene.bad  .pool { background:radial-gradient(50% 50% at 50% 50%, var(--pool-bad), transparent 70%); }
+.scene.neutral .pool { background:radial-gradient(50% 50% at 50% 50%, var(--pool-neutral), transparent 70%); }
+
+.scene .obj { position:relative; z-index:2; transform:translateY(14%); }
+.scene.good .obj { filter:drop-shadow(0 26px 40px var(--scene-glow-good)); }
+.scene.bad  .obj { filter:drop-shadow(0 26px 40px var(--scene-glow-bad)); }
+.scene.neutral .obj { filter:drop-shadow(0 26px 40px var(--scene-glow-neutral)); }
+
+.scene .art::after {
+  content:""; position:absolute; bottom:0; left:0; right:0; height:42%; z-index:4;
+  background:linear-gradient(180deg, transparent, var(--bg));
+}
+.scene .topnav-abs { position:absolute; top:64px; left:26px; right:26px; z-index:6; display:flex; align-items:center; gap:14px; }
+.scene .topnav-abs .backbtn { backdrop-filter:blur(6px); background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.14); }
+.phone[data-theme="dawn"] .scene .topnav-abs .backbtn { background:rgba(255,253,248,.5); border-color:rgba(36,28,19,.14); }
+.scene .topnav-abs .progress { background:rgba(127,127,127,.28); }
+
+.scene .payoff { flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; padding-top:10px; }
+.payoff .lead { font-size:21px; font-weight:600; margin-bottom:10px; }
+.payoff .big {
+  font-family:'Fraunces',serif; font-style:italic; font-weight:600;
+  font-size:52px; line-height:1.05; letter-spacing:-.02em; margin-bottom:16px;
+}
+.scene.good .payoff .big { color:var(--jade); }
+.scene.bad  .payoff .big { color:var(--ember); }
+.scene.neutral .payoff .big { color:var(--gold); }
+.payoff .body { font-size:15.5px; color:var(--ink2); line-height:1.55; max-width:310px; }
+
+/* ============ SPLASH — cinematic hero ============ */
+.splash { text-align:center; }
+.splash .art {
+  flex:1.45; margin:-64px -26px 0; position:relative; overflow:hidden;
+  background:var(--bg);
+}
+.splash .art svg.hero { position:absolute; inset:0; width:100%; height:100%; }
+
+.splash.hero .art { animation:heroFade 1.4s ease-out both; }
+@keyframes heroFade { from{opacity:0} to{opacity:1} }
+.anim-bloom { transform-box:fill-box; transform-origin:center; animation:heroBloom 3s ease-out .2s both; }
+@keyframes heroBloom { from{opacity:.3; transform:scale(.88)} to{opacity:1; transform:scale(1)} }
+.anim-spill { transform-box:fill-box; transform-origin:center; animation:heroSpill 3.2s ease-out .4s both; }
+@keyframes heroSpill { from{opacity:0; transform:scaleX(.7)} to{opacity:1; transform:scaleX(1)} }
+.anim-runner {
+  transform-box:fill-box; transform-origin:50% 100%;
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,.35));
+  animation:heroIn 1.2s ease-out .9s both, heroJog .5s ease-in-out 2.2s infinite alternate;
+}
+@keyframes heroIn { from{opacity:0} to{opacity:1} }
+@keyframes heroJog { from{transform:translateY(0)} to{transform:translateY(-1.6px)} }
+.splash.hero .wordmark { animation:riseIn .8s ease-out .55s both; }
+.splash.hero h1 { animation:riseIn .9s ease-out .75s both; }
+.splash.hero p { animation:riseIn .9s ease-out 1s both; }
+.splash.hero .cta { animation:riseIn .9s ease-out 1.25s both; }
+.splash.hero .cta.secondary { animation:riseIn .9s ease-out 1.4s both; }
+@keyframes riseIn { from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)} }
+.splash .art::after { content:""; position:absolute; inset:auto 0 0 0; height:36%; background:linear-gradient(180deg,transparent,var(--bg)); z-index:4; }
+.splash .wordmark { font:700 13px 'Inter'; letter-spacing:.34em; color:var(--ink2); margin:30px 0 18px; }
+.splash h1 { font-family:'Fraunces',serif; font-size:36px; font-weight:650; line-height:1.12; letter-spacing:-.015em; }
+.splash h1 .accent { display:block; font-style:italic; font-weight:450; color:var(--ember); }
+.splash p { font-size:15.5px; color:var(--ink2); line-height:1.6; margin:18px auto 32px; max-width:300px; }
+
+/* ============ STATEMENT screens (problem / solution / bridge) ============ */
+.statement { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.statement .k { font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink3); margin-bottom:18px; font-weight:600; }
+.statement h1 { font-family:'Fraunces',serif; font-size:30px; font-weight:600; line-height:1.28; letter-spacing:-.01em; max-width:300px; }
+.statement h1 .hi { color:var(--ember); }
+.statement h1 .hi.jade { color:var(--jade); }
+.statement p.foot { font-size:14.5px; color:var(--ink2); line-height:1.5; margin-top:18px; max-width:280px; }
+
+/* concentric portion rings — the app's signature data object, used here as the "solution" demo */
+.rings-wrap { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.rings { width:180px; height:180px; margin-bottom:26px; }
+.rings circle { fill:none; stroke-linecap:round; transform-origin:center; transform:rotate(-90deg); }
+.rc-track { stroke:var(--track); }
+.rc-fill { stroke-dasharray:340; stroke-dashoffset:340; animation:ringFill 1.8s cubic-bezier(.22,1,.36,1) .3s forwards; }
+@keyframes ringFill { to { stroke-dashoffset:var(--target); } }
+
+/* ============ TEXT FIELDS (name, race, account) ============ */
+.field { margin-bottom:16px; flex:0 0 auto; }
+.field label { display:block; font-size:12.5px; color:var(--ink2); font-weight:600; letter-spacing:.02em; margin-bottom:7px; }
+.field input, .field textarea {
+  width:100%; padding:16px 18px; border-radius:16px; background:var(--card);
+  border:1.5px solid var(--card-border); color:var(--ink); font:500 16px 'Inter'; outline:none;
+  transition:border-color .15s ease;
+}
+.field input:focus, .field textarea:focus { border-color:var(--ember); }
+.field input::placeholder, .field textarea::placeholder { color:var(--ink3); }
+.field textarea { min-height:92px; resize:none; font:400 15px 'Inter'; line-height:1.5; }
+.addlink { font-size:14px; color:var(--ember); font-weight:600; cursor:pointer; margin-bottom:18px; display:inline-block; }
+
+/* social auth buttons for account creation */
+.authbtn {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  height:54px; border-radius:27px; background:var(--card); border:1.5px solid var(--card-border);
+  color:var(--ink); font:600 15px 'Inter'; margin-bottom:12px; cursor:pointer;
+}
+.authbtn .dot { width:8px; height:8px; border-radius:50%; background:var(--ink); }
+.divider { display:flex; align-items:center; gap:12px; margin:18px 0; color:var(--ink3); font-size:12.5px; }
+.divider::before, .divider::after { content:""; flex:1; height:1px; background:var(--card-border); }
+.privacy-note { font-size:11.5px; color:var(--ink3); text-align:center; line-height:1.5; margin-top:16px; }
+
+/* ============ BIGNUM / SLIDER ============ */
+.bignum-wrap { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.bignum { font-family:'Fraunces',serif; font-weight:600; font-size:104px; line-height:1; transition:transform .15s cubic-bezier(.34,1.56,.64,1); }
+.bignum.bump { transform:scale(1.08); }
+.bignum-unit { color:var(--ink2); font-size:16px; margin-top:8px; }
+.unittoggle { display:flex; background:var(--card); border:1px solid var(--card-border); border-radius:99px; padding:3px; margin-top:18px; }
+.unittoggle button { border:0; background:transparent; color:var(--ink2); font:600 12.5px 'Inter'; padding:7px 16px; border-radius:99px; cursor:pointer; }
+.unittoggle button.active { background:var(--track-fill); color:var(--cta-ink); }
+.slider-row { padding:0 6px 30px; }
+.slider { -webkit-appearance:none; width:100%; height:4px; border-radius:99px; background:var(--track); outline:none; }
+.slider::-webkit-slider-thumb { -webkit-appearance:none; width:28px; height:28px; border-radius:50%; background:var(--track-fill); cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.3); }
+.slider-minmax { display:flex; justify-content:space-between; color:var(--ink3); font-size:13px; margin-top:12px; }
+
+/* ============ LETTER / REFLECTION (fading lines) ============ */
+.letter { flex:1; display:flex; flex-direction:column; justify-content:center; gap:22px; padding-bottom:20px; }
+.letter p { font-family:'Fraunces',serif; font-size:19.5px; font-weight:450; line-height:1.5; color:var(--ink2);
+  opacity:0; animation:fadeUp .7s ease-out forwards; }
+.letter p b { color:var(--ink); font-weight:600; }
+@keyframes fadeUp { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
+
+/* ============ LIVE ANSWER (Act 3 climax) — mirrors the real Today-tab meal card ============ */
+.live-wrap { flex:1; display:flex; flex-direction:column; }
+.live-loading { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.shimmer { width:230px; height:11px; border-radius:99px; margin-bottom:16px;
+  background:linear-gradient(90deg, var(--track) 25%, var(--card-border) 40%, var(--track) 60%);
+  background-size:400% 100%; animation:shimmer 1.3s ease-in-out infinite; }
+@keyframes shimmer { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+.shimmer-label { font-size:13.5px; color:var(--ink3); }
+.live-hidden { display:none; }
+.live-answer { opacity:0; animation:fadeUp .6s ease-out .1s forwards; }
+.live-answer .lead { font-size:15px; color:var(--ink2); margin-bottom:4px; text-align:center; }
+.live-answer h2 { font-family:'Fraunces',serif; font-size:21px; font-weight:600; margin-bottom:6px; text-align:center; }
+.live-answer .sub2 { font-size:13px; color:var(--ink3); text-align:center; margin-bottom:22px; }
+
+/* Today-tab meal tile — borderless, divider-separated, tap to expand */
+.daymeals { margin-top:2px; }
+.livemeal { border-top:1px solid var(--card-border); padding:16px 2px; cursor:pointer; }
+.daymeals .livemeal:first-child { border-top:none; }
+.meal-top { display:flex; align-items:center; gap:13px; }
+.livemeal .mi { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center;
+  font-size:18px; background:var(--track); flex:0 0 auto; }
+.livemeal .when { font-size:11px; text-transform:uppercase; letter-spacing:.06em; font-weight:700; color:var(--ink3); }
+.livemeal .name { font-size:15.5px; font-weight:600; margin-top:1px; }
+.pbadge { margin-left:auto; text-align:right; flex:0 0 auto; }
+.pbadge .lvl { font-size:12px; font-weight:700; letter-spacing:.02em; }
+.livemeal.extra .pbadge .lvl { color:var(--gold); }
+.livemeal.double .pbadge .lvl { color:var(--ember); }
+.plates { display:flex; gap:4px; justify-content:flex-end; margin-top:5px; }
+.plates i { width:8px; height:8px; border-radius:50%; background:var(--track); display:block; }
+.livemeal.extra .plates i.on { background:var(--gold); }
+.livemeal.double .plates i.on { background:var(--ember); }
+.livemeal .why { font-size:12.5px; color:var(--ink2); margin-top:10px; line-height:1.45; padding-left:2px; }
+.livemeal .why b { font-weight:600; }
+.livemeal.extra .why b { color:var(--gold); }
+.livemeal.double .why b { color:var(--ember); }
+.meal-exp { margin-top:13px; padding-top:13px; border-top:1px solid var(--card-border); display:none; animation:fadeUp .3s ease-out; }
+.livemeal.open .meal-exp { display:block; }
+.viz-portion { display:flex; align-items:center; gap:12px; margin-bottom:11px; }
+.viz-portion .bowl { font-size:26px; flex:0 0 auto; }
+.viz-portion .txt { font-size:13.5px; line-height:1.45; color:var(--ink2); }
+.viz-portion .txt b { color:var(--ink); }
+.numbers { background:var(--card); border:1px solid var(--card-border); border-radius:12px; padding:11px 13px;
+  display:flex; justify-content:space-between; font-size:12.5px; color:var(--ink2); }
+.numbers span b { font-family:'Fraunces',serif; font-size:15px; display:block; color:var(--ink); }
+.tapnote { font-size:11.5px; color:var(--ink3); margin-top:9px; padding-left:2px; }
+
+/* ============ CONNECT CARDS ============ */
+.connectcard { display:flex; align-items:center; gap:14px; padding:16px 18px; margin-bottom:12px;
+  background:var(--card); border:1px solid var(--card-border); border-radius:18px; }
+.connectcard .mark { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+  font:700 15px 'Fraunces'; color:#fff; flex:0 0 auto; }
+.connectcard .mark.a { background:var(--ember); }
+.connectcard .mark.b { background:var(--jade); }
+.connectcard .info { flex:1; }
+.connectcard .info b { display:block; font-size:15px; }
+.connectcard .info span { font-size:12.5px; color:var(--ink2); }
+.connectcard .connectbtn { padding:9px 16px; border-radius:99px; background:var(--track); color:var(--ink); font:600 12.5px 'Inter'; white-space:nowrap; }
+
+/* ============ COMMITMENT (Cialdini) ============ */
+.commit-response { margin-top:8px; padding:16px 18px; border-radius:16px; background:var(--card); border:1px solid var(--ember);
+  font-size:14px; color:var(--ink2); line-height:1.5; display:none; }
+.commit-response.show { display:block; animation:fadeUp .5s ease-out forwards; }
+
+/* ============ RADAR (kept for reference use elsewhere if needed) ============ */
+.radar-wrap { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.radar-caption { font-size:14.5px; color:var(--ink2); line-height:1.55; text-align:center; max-width:310px; margin-top:20px; }
+.radar-label { font:500 12.5px 'Inter'; fill:var(--ink2); opacity:0; animation:revealRise .5s ease-out .5s forwards; }
+#radarBlob { transform-box:fill-box; transform-origin:center; transform:scale(0); opacity:0;
+  animation:radarPop .7s cubic-bezier(.34,1.56,.64,1) .2s forwards; }
+@keyframes radarPop { to { transform:scale(1); opacity:1; } }
+@keyframes revealRise { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
+
+/* ============ OUTCOME PROJECTION / CHART CARD ============ */
+.chart-card { background:var(--card); border:1px solid var(--card-border); border-radius:20px; padding:18px 14px 12px; }
+.legend { display:flex; gap:18px; justify-content:center; font-size:12.5px; color:var(--ink2); margin-top:10px; }
+.legend i { width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:6px; }
+.milestone { display:flex; align-items:center; gap:10px; margin-top:16px; padding:14px 16px; background:var(--card); border:1px solid var(--card-border); border-radius:16px; }
+.milestone .m-dot { width:9px; height:9px; border-radius:50%; background:var(--gold); flex:0 0 auto; }
+.milestone span { font-size:13.5px; color:var(--ink2); line-height:1.4; }
+.milestone b { color:var(--ink); }
+
+/* ============ BUILDING ============ */
+.build { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.ring { width:110px; height:110px; border-radius:50%; margin-bottom:34px;
+  border:4px solid var(--track); border-top-color:var(--ember);
+  animation:spin 1.1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.build h2 { font-family:'Fraunces',serif; font-size:27px; font-weight:600; margin-bottom:18px; }
+.build .rotline { font-size:15px; color:var(--ink2); min-height:44px; max-width:300px; line-height:1.5; transition:opacity .35s; }
+
+/* ============ PLAN REVEAL ============ */
+.reveal { text-align:center; }
+.reveal .check {
+  position:relative; width:56px; height:56px; border-radius:50%; margin:6px auto 20px;
+  background:var(--jade); display:flex; align-items:center; justify-content:center;
+  transform:scale(0); animation:checkPop .6s cubic-bezier(.34,1.56,.64,1) .15s forwards;
+}
+@keyframes checkPop { to { transform:scale(1); } }
+.reveal .check svg { width:24px; height:24px; stroke:#FFF; stroke-width:3; fill:none; stroke-linecap:round; stroke-linejoin:round;
+  stroke-dasharray:26; stroke-dashoffset:26; animation:checkDraw .4s ease-out .55s forwards; }
+@keyframes checkDraw { to { stroke-dashoffset:0; } }
+.reveal h1 { font-family:'Fraunces',serif; font-size:29px; font-weight:650; line-height:1.16; letter-spacing:-.01em;
+  opacity:0; animation:revealRise .6s ease-out .5s forwards; }
+.reveal .sub { font-size:15px; color:var(--ink2); margin:12px auto 20px; max-width:300px; line-height:1.5;
+  opacity:0; animation:revealRise .6s ease-out .62s forwards; }
+.race-pill { display:inline-flex; align-items:center; gap:8px; padding:11px 18px; border-radius:99px;
+  background:var(--plan-badge-bg); color:var(--plan-badge-ink); font:600 14px 'Inter'; margin-bottom:22px; }
+.statrow { display:flex; gap:10px; margin:18px 0 22px; }
+.stat { flex:1; background:var(--card); border:1px solid var(--card-border); border-radius:16px; padding:14px 6px; }
+.stat b { display:block; font-family:'Fraunces',serif; font-size:23px; font-weight:600; }
+.stat span { font-size:11.5px; color:var(--ink2); }
+
+/* ============ NOTIFICATION PRE-PROMPT ============ */
+.notif-demo { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; text-align:center; }
+.notif { display:flex; gap:12px; padding:14px 16px; background:var(--card); border:1px solid var(--card-border);
+  border-radius:18px; box-shadow:0 14px 34px rgba(0,0,0,.22); max-width:320px; margin-bottom:30px; text-align:left; }
+.notif .ic { width:38px; height:38px; border-radius:10px; background:var(--ember); flex:0 0 auto; }
+.notif .txt b { display:block; font-size:13.5px; margin-bottom:3px; }
+.notif .txt span { font-size:12.5px; color:var(--ink2); line-height:1.4; }
+.notif .time { margin-left:auto; font-size:11px; color:var(--ink3); flex:0 0 auto; }
+
+/* ============ PAYWALL ============ */
+.pay .close { margin-left:auto; width:38px; height:38px; border-radius:50%; background:var(--card);
+  border:1px solid var(--card-border); display:flex; align-items:center; justify-content:center; color:var(--ink2); }
+.pay h1 { font-family:'Fraunces',serif; font-size:27px; font-weight:650; line-height:1.16; text-align:center; letter-spacing:-.01em; margin-top:4px; }
+.pay .sub { text-align:center; font-size:14px; color:var(--ink2); margin:10px auto 18px; max-width:300px; line-height:1.5; }
+.sciencecard { background:var(--card); border:1px solid var(--card-border); border-radius:14px; padding:12px 14px; margin-bottom:8px; }
+.sciencecard b { display:block; font-size:12.5px; margin-bottom:2px; }
+.sciencecard span { font-size:11.5px; color:var(--ink2); }
+.plans { display:flex; gap:10px; margin-bottom:8px; margin-top:14px; }
+.plan { flex:1; position:relative; background:var(--card); border:1.5px solid var(--card-border); border-radius:18px; padding:16px 14px; }
+.plan.hero { border-color:var(--ember); }
+.plan .badge { position:absolute; top:-11px; right:12px; background:var(--ember); color:#FFF6EC;
+  font:700 10.5px 'Inter'; letter-spacing:.04em; padding:4px 10px; border-radius:99px; }
+.plan .name { font-weight:700; font-size:15px; margin-bottom:4px; display:flex; align-items:center; }
+.plan .name .radio { margin-left:auto; width:20px; height:20px; border-radius:50%; border:2px solid var(--ink3); }
+.plan.hero .name .radio { border-color:var(--ember); background:var(--ember); box-shadow:inset 0 0 0 3.5px var(--card); }
+.plan .price { font-family:'Fraunces',serif; font-size:19px; font-weight:600; }
+.plan .per { font-size:11.5px; color:var(--ink2); margin-top:3px; }
+.timeline { display:flex; justify-content:space-between; margin:20px 0 6px; position:relative; }
+.timeline::before { content:""; position:absolute; top:9px; left:16px; right:16px; height:2px; background:var(--track); }
+.tstep { flex:1; text-align:center; position:relative; z-index:1; }
+.tstep .tdot { width:18px; height:18px; border-radius:50%; background:var(--card); border:2px solid var(--track-fill); margin:0 auto 8px; }
+.tstep b { display:block; font-size:11.5px; margin-bottom:2px; }
+.tstep span { font-size:10.5px; color:var(--ink2); }
+.trial-note { text-align:center; font-size:12px; color:var(--ink2); margin:10px 0 6px; }
+.cancel-line { text-align:center; font-size:12.5px; color:var(--ink3); margin-bottom:14px; }
+.legalrow { display:flex; justify-content:center; gap:22px; font-size:12px; color:var(--ink3); margin-top:14px; }
+
+/* value framing — what the plan unlocks (sells the future, per transcript) */
+.pay .featlist { margin:14px 0 4px; }
+.pay .feat { display:flex; align-items:flex-start; gap:11px; font-size:14px; margin-bottom:11px; line-height:1.4; }
+.pay .feat .fi { color:var(--jade); flex:0 0 auto; margin-top:1px; font-weight:700; }
+/* social proof — real star rating + review */
+.pay .stars { text-align:center; font-size:15px; color:var(--gold); letter-spacing:2px; margin-top:4px; }
+.pay .stars b { color:var(--ink); font:600 13px 'Inter'; letter-spacing:0; margin-left:8px; }
+.pay .quote { text-align:center; font-size:13px; color:var(--ink2); line-height:1.5; margin:8px auto 4px; max-width:300px; font-style:italic; }
+/* price anchor — the annual broken down + everyday comparison */
+.pay .anchor { text-align:center; font-size:12.5px; color:var(--ink2); margin:2px 0 2px; }
+.pay .anchor b { color:var(--ink); font-weight:600; }
+/* view-all-plans trigger */
+.viewall { text-align:center; font-size:12.5px; color:var(--ink2); text-decoration:underline; text-underline-offset:2px; margin:2px 0 12px; cursor:pointer; }
+/* chevron on CTA */
+.cta .chev { margin-left:8px; font-weight:700; }
+
+/* bottom sheets (view-all-plans + exit-intent) */
+.sheet-scrim { position:absolute; inset:0; background:rgba(0,0,0,.5); z-index:60; opacity:0; pointer-events:none; transition:opacity .25s ease; }
+.sheet-scrim.show { opacity:1; pointer-events:auto; }
+.sheet { position:absolute; left:0; right:0; bottom:0; z-index:61; background:var(--bg);
+  border-radius:26px 26px 0 0; padding:22px 22px 30px; transform:translateY(100%);
+  transition:transform .32s cubic-bezier(.22,1,.36,1); box-shadow:0 -12px 40px rgba(0,0,0,.3); }
+.sheet.show { transform:translateY(0); }
+.sheet .grab { width:38px; height:4px; border-radius:99px; background:var(--card-border); margin:0 auto 18px; }
+.sheet h3 { font-family:'Fraunces',serif; font-size:20px; font-weight:600; margin-bottom:4px; text-align:center; }
+.sheet .shsub { font-size:13px; color:var(--ink2); text-align:center; line-height:1.5; margin-bottom:18px; }
+.sheet-plan { display:flex; align-items:center; gap:14px; padding:15px 16px; margin-bottom:10px;
+  background:var(--card); border:1.5px solid var(--card-border); border-radius:16px; }
+.sheet-plan.hero { border-color:var(--ember); }
+.sheet-plan .sp-name { font-weight:600; font-size:15px; }
+.sheet-plan .sp-per { font-size:12px; color:var(--ink2); margin-top:2px; }
+.sheet-plan .sp-price { margin-left:auto; font-family:'Fraunces',serif; font-size:17px; font-weight:600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ring, .anim-bloom, .anim-spill, .anim-runner { animation:none; }
+  .opt,.check,.check svg,#radarBlob,.radar-label,.reveal h1,.reveal .sub,.letter p,.answer-card,.rc-fill { animation:none !important; opacity:1 !important; transform:none !important; }
+  .confetti-piece { display:none; }
+}
+</style>
+</head>
+<body>
+
+<div class="bench-bar">
+  <div class="bench-title"><b>Crunch</b> · Onboarding v3 — full 31-screen story flow<span class="act" id="actLabel"></span></div>
+  <div class="theme-toggle">
+    <button id="tDark" class="active" onclick="setTheme('dark')">Dark Cinema</button>
+    <button id="tDawn" onclick="setTheme('dawn')">Dawn Fuel</button>
+  </div>
+  <div class="bench-nav">
+    <button onclick="nav(-1)">‹</button>
+    <div class="screen-label" id="screenLabel"></div>
+    <button onclick="nav(1)">›</button>
+  </div>
+</div>
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+  <div class="phone-wrap" id="phoneWrap">
+    <div class="phone" data-theme="dark" id="phone">
+      <div class="notch"></div>
+
+      <!-- ============ ACT 1 — THE HOOK ============ -->
+
+      <!-- 1 · WELCOME -->
+      <section class="screen splash hero on" data-act="1" data-name="1 · Welcome">
+        <div class="art grain">
+          <svg class="hero" viewBox="0 0 390 520" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <linearGradient id="hSky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--hero-sky-top)"/>
+                <stop offset=".52" stop-color="var(--hero-sky-mid)"/>
+                <stop offset=".8" stop-color="var(--hero-sky-low)"/>
+                <stop offset="1" stop-color="var(--hero-sky-low)"/>
+              </linearGradient>
+              <radialGradient id="hBloom" cx=".5" cy=".5" r=".5">
+                <stop offset="0" stop-color="var(--hero-sun)" stop-opacity=".5"/>
+                <stop offset=".45" stop-color="var(--hero-sun)" stop-opacity=".2"/>
+                <stop offset="1" stop-color="var(--hero-sun)" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="hSun" cx=".5" cy=".5" r=".5">
+                <stop offset="0" stop-color="var(--hero-sun-core)"/>
+                <stop offset=".45" stop-color="var(--hero-sun)" stop-opacity=".95"/>
+                <stop offset="1" stop-color="var(--hero-sun)" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="hSpill" cx=".5" cy=".5" r=".5">
+                <stop offset="0" stop-color="var(--hero-sun)" stop-opacity=".55"/>
+                <stop offset="1" stop-color="var(--hero-sun)" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect width="390" height="520" fill="url(#hSky)"/>
+            <circle class="anim-bloom" cx="210" cy="352" r="215" fill="url(#hBloom)"/>
+            <circle cx="210" cy="350" r="80" fill="url(#hSun)"/>
+            <ellipse class="anim-spill" cx="210" cy="354" rx="240" ry="24" fill="url(#hSpill)"/>
+            <path d="M0,356 L48,318 L96,346 L150,312 L205,344 L258,316 L312,342 L358,320 L390,340 L390,520 L0,520 Z" fill="var(--hero-r-far)" opacity=".8"/>
+            <path d="M0,378 L60,344 L120,368 L180,336 L235,364 L300,338 L390,362 L390,520 L0,520 Z" fill="var(--hero-r-near)"/>
+            <ellipse class="anim-runner" cx="210" cy="404" rx="4.5" ry="16" fill="var(--hero-runner)"/>
+          </svg>
+        </div>
+        <div class="wordmark">CRUNCH</div>
+        <h1>Hey.</h1>
+        <p>You train with a plan. Let's make sure you eat with one too.</p>
+        <div class="cta">Get Started</div>
+        <div class="cta secondary">Already have an account? Sign in</div>
+      </section>
+
+      <!-- 2 · PROBLEM -->
+      <section class="screen" data-act="1" data-name="2 · The problem">
+        <div class="statement" style="flex:1">
+          <div class="k">Sound familiar?</div>
+          <h1>You train with a plan.<br>You eat by <span class="hi">guesswork.</span></h1>
+          <p class="foot">Every session is logged. Every dinner is a shrug.</p>
+        </div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 3 · SOLUTION -->
+      <section class="screen" data-act="1" data-name="3 · The solution">
+        <div class="rings-wrap">
+          <svg class="rings" viewBox="0 0 180 180">
+            <circle class="rc-track" cx="90" cy="90" r="78" stroke-width="10"/>
+            <circle class="rc-track" cx="90" cy="90" r="58" stroke-width="10"/>
+            <circle class="rc-track" cx="90" cy="90" r="38" stroke-width="10"/>
+            <circle class="rc-fill" cx="90" cy="90" r="78" stroke-width="10" stroke="var(--ember)" style="--target:82; stroke-dasharray:490" />
+            <circle class="rc-fill" cx="90" cy="90" r="58" stroke-width="10" stroke="var(--jade)" style="--target:150; stroke-dasharray:364; animation-delay:.5s"/>
+            <circle class="rc-fill" cx="90" cy="90" r="38" stroke-width="10" stroke="var(--gold)" style="--target:60; stroke-dasharray:238; animation-delay:.8s"/>
+          </svg>
+          <h2 class="serif" style="font-size:22px;font-weight:600;text-align:center;margin-bottom:10px">Crunch reads your training.<br>You get real portions.</h2>
+          <p style="font-size:14.5px;color:var(--ink2);text-align:center;max-width:280px;line-height:1.5">Never wonder how much to eat for tomorrow's run.</p>
+        </div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 4 · NAME -->
+      <section class="screen" data-act="1" data-name="4 · Your name">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:8%"></i></div></div>
+        <div class="q-title">What should we call you?</div>
+        <div class="q-sub">We'll use it to make this feel like yours.</div>
+        <div class="field"><input type="text" id="nameInput" value="Prakash" placeholder="Your first name"></div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 5 · RACE TYPE -->
+      <section class="screen" data-act="1" data-name="5 · Race type">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:12%"></i></div></div>
+        <div class="q-title">What are you training for, <span class="nameSlot">Prakash</span>?</div>
+        <div class="q-sub">This shapes everything that follows.</div>
+        <div class="optlist">
+          <div class="opt picked">5K <div class="radio"></div></div>
+          <div class="opt">10K <div class="radio"></div></div>
+          <div class="opt">Half Marathon <div class="radio"></div></div>
+          <div class="opt">Marathon <div class="radio"></div></div>
+          <div class="opt">Ultra Marathon <div class="radio"></div></div>
+          <div class="opt">Other <div class="radio"></div></div>
+        </div>
+        <div class="hint">Tap to auto-advance</div>
+      </section>
+
+      <!-- 6 · RACE DETAILS -->
+      <section class="screen" data-act="1" data-name="6 · Race name & date">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:16%"></i></div></div>
+        <div class="q-title">What's it called, and when?</div>
+        <div class="q-sub">The date is what everything gets counted against.</div>
+        <div class="field"><label>Race name (optional)</label><input type="text" placeholder="e.g. Amsterdam Marathon" value="Amsterdam Marathon"></div>
+        <div class="field"><label>Race date</label><input type="text" placeholder="Pick a date" value="Sun, Oct 18, 2026"></div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 7 · HOOK bombshell -->
+      <section class="screen" data-act="1" data-name="7 · Hook — meals to race day">
+        <div class="scene neutral">
+          <div class="art grain">
+            <div class="cone"></div><div class="pool"></div>
+            <div class="topnav-abs"><div class="backbtn">‹</div><div class="progress"><i style="width:20%"></i></div></div>
+            <svg class="obj" width="130" height="160" viewBox="0 0 130 160">
+              <defs>
+                <linearGradient id="hgCap1" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="var(--obj-body2)"/><stop offset="1" stop-color="var(--obj-body)"/>
+                </linearGradient>
+              </defs>
+              <ellipse cx="65" cy="152" rx="48" ry="6" fill="#000" opacity=".4"/>
+              <rect x="16" y="6" width="98" height="10" rx="5" fill="url(#hgCap1)" stroke="var(--gold)" stroke-opacity=".4" stroke-width="1"/>
+              <rect x="16" y="140" width="98" height="10" rx="5" fill="url(#hgCap1)" stroke="var(--gold)" stroke-opacity=".4" stroke-width="1"/>
+              <path d="M26,16 C26,48 56,62 56,78 C56,94 26,108 26,140 M104,16 C104,48 74,62 74,78 C74,94 104,108 104,140" fill="none" stroke="var(--gold)" stroke-opacity=".55" stroke-width="1.6"/>
+              <path d="M40,30 C46,44 56,54 62,62 L68,62 C74,54 84,44 90,30 Z" fill="var(--gold)" opacity=".8"/>
+            </svg>
+          </div>
+          <div class="payoff">
+            <div class="lead"><span class="nameSlot">Prakash</span>, here's the math</div>
+            <div class="big">94 days</div>
+            <div class="body">Amsterdam Marathon is 94 days out. That's roughly 280 meals between now and the start line — and every one of them is training.</div>
+          </div>
+        </div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- ============ ACT 2 — RECOGNITION ============ -->
+
+      <!-- 8 · SEX -->
+      <section class="screen" data-act="2" data-name="8 · Biological sex">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:24%"></i></div></div>
+        <div class="q-title">What's your biological sex?</div>
+        <div class="q-sub">Used only for energy and fueling calculations.</div>
+        <div class="optlist">
+          <div class="opt picked">Male <div class="radio"></div></div>
+          <div class="opt">Female <div class="radio"></div></div>
+        </div>
+        <div class="hint">Tap to auto-advance</div>
+      </section>
+
+      <!-- 9 · AGE -->
+      <section class="screen" data-act="2" data-name="9 · Age">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:28%"></i></div></div>
+        <div class="q-title">How old are you?</div>
+        <div class="q-sub">Part of getting your baseline right.</div>
+        <div class="bignum-wrap">
+          <div class="bignum" id="ageNum">34</div>
+          <div class="bignum-unit">years old</div>
+        </div>
+        <div class="slider-row">
+          <input type="range" min="16" max="80" value="34" class="slider" oninput="bump('ageNum',this.value)">
+          <div class="slider-minmax"><span>16</span><span>80</span></div>
+        </div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 10 · WEIGHT -->
+      <section class="screen" data-act="2" data-name="10 · Weight">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:32%"></i></div></div>
+        <div class="q-title">What's your current weight?</div>
+        <div class="q-sub">Portions are personal — a 58kg and an 82kg runner shouldn't eat the same plate.</div>
+        <div class="bignum-wrap">
+          <div class="bignum" id="wtNum">74</div>
+          <div class="bignum-unit">kg</div>
+          <div class="unittoggle"><button class="active">kg</button><button>lb</button></div>
+        </div>
+        <div class="slider-row">
+          <input type="range" min="40" max="140" value="74" class="slider" oninput="bump('wtNum',this.value)">
+          <div class="slider-minmax"><span>40</span><span>140</span></div>
+        </div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 11 · HEIGHT -->
+      <section class="screen" data-act="2" data-name="11 · Height">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:36%"></i></div></div>
+        <div class="q-title">How tall are you?</div>
+        <div class="q-sub">Last biometric — almost there.</div>
+        <div class="bignum-wrap">
+          <div class="bignum" id="htNum">178</div>
+          <div class="bignum-unit">cm</div>
+          <div class="unittoggle"><button class="active">cm</button><button>ft/in</button></div>
+        </div>
+        <div class="slider-row">
+          <input type="range" min="140" max="210" value="178" class="slider" oninput="bump('htNum',this.value)">
+          <div class="slider-minmax"><span>140</span><span>210</span></div>
+        </div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 12 · TRAINING LEVEL -->
+      <section class="screen" data-act="2" data-name="12 · Training level">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:40%"></i></div></div>
+        <div class="q-title">How serious is your training?</div>
+        <div class="q-sub">Be honest — this tunes everything downstream.</div>
+        <div class="optlist">
+          <div class="opt">Beginner <div class="radio"></div></div>
+          <div class="opt picked">Intermediate <div class="radio"></div></div>
+          <div class="opt">Advanced <div class="radio"></div></div>
+        </div>
+        <div class="hint">Tap to auto-advance</div>
+      </section>
+
+      <!-- 13 · LONGEST RUN -->
+      <section class="screen" data-act="2" data-name="13 · Longest current run">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:44%"></i></div></div>
+        <div class="q-title">What's your longest run right now?</div>
+        <div class="q-sub">Your current long run — not your goal.</div>
+        <div class="bignum-wrap">
+          <div class="bignum" id="runNum">18</div>
+          <div class="bignum-unit">km</div>
+        </div>
+        <div class="slider-row">
+          <input type="range" min="3" max="42" value="18" class="slider" oninput="bump('runNum',this.value)">
+          <div class="slider-minmax"><span>3</span><span>42</span></div>
+        </div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 14 · OTHER ACTIVITIES (multi) -->
+      <section class="screen" data-act="2" data-name="14 · Other weekly activities">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:48%"></i></div></div>
+        <div class="q-title">Anything else during the week?</div>
+        <div class="q-sub">Select all that apply.</div>
+        <div class="optlist" data-multi="true">
+          <div class="opt">Gym — upper body <div class="box"></div></div>
+          <div class="opt picked">Gym — lower body <div class="box"></div></div>
+          <div class="opt">Gym — full body <div class="box"></div></div>
+          <div class="opt">Cycling <div class="box"></div></div>
+          <div class="opt">Swimming <div class="box"></div></div>
+          <div class="opt">Nothing else <div class="box"></div></div>
+        </div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 15 · WHAT'S GONE WRONG (multi) -->
+      <section class="screen" data-act="2" data-name="15 · What's gone wrong before">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:52%"></i></div></div>
+        <div class="q-title">What's gone wrong before?</div>
+        <div class="q-sub">Pick everything that's happened to you.</div>
+        <div class="optlist" data-multi="true">
+          <div class="opt picked">Hit the wall late in a race <div class="box"></div></div>
+          <div class="opt">Stomach turned mid-run <div class="box"></div></div>
+          <div class="opt picked">Dead legs on back-to-back days <div class="box"></div></div>
+          <div class="opt">No appetite after hard sessions <div class="box"></div></div>
+          <div class="opt">Honestly, just guessing <div class="box"></div></div>
+        </div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 16 · REFLECTION -->
+      <section class="screen" data-act="2" data-name="16 · Reflection">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:56%"></i></div></div>
+        <div class="letter">
+          <p style="animation-delay:.1s">So — you're <b>intermediate</b>, fourteen weeks out from <b>Amsterdam</b>.</p>
+          <p style="animation-delay:.7s">Your longest run so far is <b>18K</b>.</p>
+          <p style="animation-delay:1.3s">And the wall late in a race has bitten before.</p>
+          <p style="animation-delay:1.9s">Let's make sure it doesn't again, <b class="nameSlot">Prakash</b>.</p>
+        </div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 17 · THE BOMBSHELL -->
+      <section class="screen" data-act="2" data-name="17 · The bombshell — two dinners">
+        <div class="scene bad">
+          <div class="art grain">
+            <div class="cone"></div><div class="pool"></div>
+            <div class="topnav-abs"><div class="backbtn">‹</div><div class="progress"><i style="width:60%"></i></div></div>
+            <svg class="obj" width="176" height="120" viewBox="0 0 176 120">
+              <defs>
+                <linearGradient id="bowlBody2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="var(--obj-body2)"/><stop offset="1" stop-color="var(--obj-body)"/>
+                </linearGradient>
+                <linearGradient id="bowlRim2" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="var(--ember)" stop-opacity=".1"/>
+                  <stop offset=".5" stop-color="var(--ember)" stop-opacity=".85"/>
+                  <stop offset="1" stop-color="var(--ember)" stop-opacity=".1"/>
+                </linearGradient>
+              </defs>
+              <ellipse cx="88" cy="108" rx="62" ry="7" fill="#000" opacity=".4"/>
+              <path d="M18,42 C20,80 46,104 88,104 C130,104 156,80 158,42 A70,15 0 0 1 18,42 Z" fill="url(#bowlBody2)"/>
+              <ellipse cx="88" cy="42" rx="70" ry="15" fill="var(--obj-body)"/>
+              <ellipse cx="88" cy="42" rx="70" ry="15" fill="none" stroke="url(#bowlRim2)" stroke-width="2"/>
+              <ellipse cx="88" cy="44" rx="58" ry="11" fill="#000" opacity=".35"/>
+            </svg>
+          </div>
+          <div class="payoff">
+            <div class="lead">Here's the honest part</div>
+            <div class="big">2 dinners</div>
+            <div class="body">Your Sunday 18K burns through roughly the fuel of two full dinners. Most runners eat the same on long-run Sunday as on rest-day Tuesday.</div>
+          </div>
+        </div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 18 · BRIDGE -->
+      <section class="screen" data-act="2" data-name="18 · The bridge">
+        <div class="letter">
+          <p style="animation-delay:.1s">It doesn't have to be guesswork.</p>
+          <p style="animation-delay:.8s">Two more minutes, <b class="nameSlot">Prakash</b> —</p>
+          <p style="animation-delay:1.5s">let's build your fuel plan.</p>
+        </div>
+        <div class="cta">Let's do it</div>
+      </section>
+
+      <!-- ============ ACT 3 — CLIMAX ============ -->
+
+      <!-- 19 · DIETARY PREFS -->
+      <section class="screen" data-act="3" data-name="19 · Dietary preferences">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:64%"></i></div></div>
+        <div class="q-title">Any dietary preferences?</div>
+        <div class="q-sub">So your meal estimates actually fit how you eat.</div>
+        <div class="optlist">
+          <div class="opt picked">Omnivore <div class="radio"></div></div>
+          <div class="opt">Vegetarian <div class="radio"></div></div>
+          <div class="opt">Vegan <div class="radio"></div></div>
+          <div class="opt">Pescatarian <div class="radio"></div></div>
+        </div>
+        <div class="hint">Tap to auto-advance</div>
+      </section>
+
+      <!-- 20 · BREAKFAST -->
+      <section class="screen" data-act="3" data-name="20 · Breakfast">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:68%"></i></div></div>
+        <div class="q-title">What do you usually have for breakfast?</div>
+        <div class="q-sub">Describe it your way — we'll do the rest.</div>
+        <div class="field"><textarea placeholder="e.g. Greek yoghurt with granola and a banana">Oats with peanut butter and a banana</textarea></div>
+        <div class="addlink">+ Add another</div>
+        <div class="cta">Continue</div>
+        <div class="cta secondary">I don't eat breakfast</div>
+      </section>
+
+      <!-- 21 · LUNCH -->
+      <section class="screen" data-act="3" data-name="21 · Lunch">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:72%"></i></div></div>
+        <div class="q-title">What about lunch?</div>
+        <div class="q-sub">Same idea — just describe your usual.</div>
+        <div class="field"><textarea placeholder="e.g. Chicken burrito bowl">Chicken, rice and veg from the place near work</textarea></div>
+        <div class="addlink">+ Add another</div>
+        <div class="cta">Continue</div>
+        <div class="cta secondary">I skip lunch</div>
+      </section>
+
+      <!-- 22 · DINNER -->
+      <section class="screen" data-act="3" data-name="22 · Dinner">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:76%"></i></div></div>
+        <div class="q-title">And dinner?</div>
+        <div class="q-sub">Last one — then we'll show you something.</div>
+        <div class="field"><textarea placeholder="e.g. Salmon, rice, greens">Dal, rice, and a side of veg</textarea></div>
+        <div class="addlink">+ Add another</div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 23 · LIVE ANSWER (climax) — matches the real Today tab exactly -->
+      <section class="screen" data-act="3" data-name="23 · The live answer (climax)">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:80%"></i></div></div>
+        <div class="live-wrap">
+
+          <!-- loading state -->
+          <div class="live-loading" id="liveLoading">
+            <div class="shimmer"></div>
+            <div class="shimmer-label">Reading your meals…</div>
+          </div>
+
+          <!-- revealed state: two real meal tiles, same component as the Today tab -->
+          <div class="live-answer live-hidden" id="liveAnswer">
+            <div class="lead">Here's a taste, <span class="nameSlot">Prakash</span></div>
+            <h2>This is your Today tab</h2>
+            <div class="sub2">Same dal &amp; rice you told us about — two different nights.</div>
+
+            <div class="daymeals">
+              <div class="livemeal extra" onclick="this.classList.toggle('open')">
+                <div class="meal-top">
+                  <span class="mi">🌙</span>
+                  <div><div class="when">Long-run eve · dinner</div><div class="name">Dal &amp; rice</div></div>
+                  <div class="pbadge"><div class="lvl">EXTRA</div><div class="plates"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+                </div>
+                <div class="why">Tomorrow's 16K needs topping up — <b>an extra portion of rice</b> tonight.</div>
+                <div class="meal-exp">
+                  <div class="viz-portion"><span class="bowl">🍚</span><div class="txt"><b>1.5 cups rice</b> instead of your usual 1 cup.</div></div>
+                  <div class="numbers"><span><b>140g</b>carbs</span><span><b>28g</b>protein</span><span><b>14g</b>fat</span></div>
+                </div>
+                <div class="tapnote">Tap to see the numbers</div>
+              </div>
+
+              <div class="livemeal double open" onclick="this.classList.toggle('open')">
+                <div class="meal-top">
+                  <span class="mi">🏁</span>
+                  <div><div class="when">Race eve · dinner</div><div class="name">Dal &amp; rice</div></div>
+                  <div class="pbadge"><div class="lvl">DOUBLE</div><div class="plates"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
+                </div>
+                <div class="why"><b>Double portion</b> the night before Amsterdam — this is what carries you to 42.2K.</div>
+                <div class="meal-exp">
+                  <div class="viz-portion"><span class="bowl">🍚</span><div class="txt"><b>2 full bowls</b> instead of your usual 1 — same meal, twice the rice.</div></div>
+                  <div class="numbers"><span><b>210g</b>carbs</span><span><b>34g</b>protein</span><span><b>16g</b>fat</span></div>
+                </div>
+                <div class="tapnote">Tap to collapse</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="cta">That's exactly what I needed</div>
+      </section>
+
+      <!-- 24 · CONNECT APPS -->
+      <section class="screen" data-act="3" data-name="24 · Connect Strava / Runna">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:84%"></i></div></div>
+        <div class="q-title">Make it automatic</div>
+        <div class="q-sub">Connect and your portions update themselves after every run.</div>
+        <div class="connectcard">
+          <div class="mark a">S</div>
+          <div class="info"><b>Strava</b><span>Auto-sync runs and long sessions</span></div>
+          <div class="connectbtn">Connect</div>
+        </div>
+        <div class="connectcard">
+          <div class="mark b">R</div>
+          <div class="info"><b>Runna</b><span>Sync your training calendar</span></div>
+          <div class="connectbtn">Connect</div>
+        </div>
+        <div class="cta">Continue</div>
+        <div class="cta secondary">Skip for now</div>
+      </section>
+
+      <!-- ============ ACT 4 — CONCLUSION ============ -->
+
+      <!-- 25 · OUTCOME PROJECTION -->
+      <section class="screen" data-act="4" data-name="25 · Outcome projection">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:88%"></i></div></div>
+        <div class="q-title" style="text-align:center">By race week, you'll know exactly what to eat</div>
+        <div class="q-sub" style="text-align:center">Every single day — including the three-day carb load most runners get wrong.</div>
+        <div class="chart-card">
+          <svg width="100%" height="140" viewBox="0 0 320 140" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gWith2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--chart-with)" stop-opacity=".38"/>
+                <stop offset="1" stop-color="var(--chart-with)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,128 C60,122 110,118 180,110 C240,103 290,98 320,95 L320,140 L0,140 Z" fill="var(--chart-without)" opacity=".25"/>
+            <path d="M0,128 C60,122 110,118 180,110 C240,103 290,98 320,95" fill="none" stroke="var(--chart-without)" stroke-width="2"/>
+            <path d="M0,128 C50,102 90,72 150,52 C220,32 275,22 320,16 L320,140 L0,140 Z" fill="url(#gWith2)"/>
+            <path d="M0,128 C50,102 90,72 150,52 C220,32 275,22 320,16" fill="none" stroke="var(--chart-with)" stroke-width="2.5"/>
+          </svg>
+          <div class="legend">
+            <span><i style="background:var(--chart-with)"></i>Fueled with Crunch</span>
+            <span><i style="background:var(--chart-without)"></i>On guesswork</span>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="m-dot"></div>
+          <span><b>Race week:</b> your carb-load protocol starts automatically — three days, dialled to your race distance.</span>
+        </div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 26 · BUILDING -->
+      <section class="screen" data-act="4" data-name="26 · Building your plan">
+        <div class="build">
+          <div class="ring"></div>
+          <h2>Building your fuel plan</h2>
+          <div class="rotline" id="rotline2">Setting carb portions for your long-run days…</div>
+        </div>
+      </section>
+
+      <!-- 27 · COMMITMENT -->
+      <section class="screen" data-act="4" data-name="27 · Commitment (Cialdini)">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:92%"></i></div></div>
+        <div class="q-title">How committed are you to fueling this block, <span class="nameSlot">Prakash</span>?</div>
+        <div class="optlist" id="commitList">
+          <div class="opt picked" data-resp="Love it. Every long run and every taper day, we'll be ready together.">All in <div class="radio"></div></div>
+          <div class="opt" data-resp="That's honest — and it's plenty. We'll fit around your week, not fight it.">Mostly, life permitting <div class="radio"></div></div>
+          <div class="opt" data-resp="No pressure. Take a look — the plan will be here whenever you're ready to lean in.">Just seeing what this is <div class="radio"></div></div>
+        </div>
+        <div class="commit-response show" id="commitResp">Love it. Every long run and every taper day, we'll be ready together.</div>
+        <div class="cta">Continue</div>
+      </section>
+
+      <!-- 28 · CREATE ACCOUNT -->
+      <section class="screen" data-act="4" data-name="28 · Create account">
+        <div class="topnav"><div class="backbtn">‹</div><div class="progress"><i style="width:95%"></i></div></div>
+        <div class="q-title">Save your fuel plan</div>
+        <div class="q-sub">So it's here next time you open Crunch.</div>
+        <div class="authbtn"><span class="dot"></span> Continue with Apple</div>
+        <div class="authbtn"><span class="dot"></span> Continue with Google</div>
+        <div class="divider">or</div>
+        <div class="field"><input type="text" placeholder="Email"></div>
+        <div class="field"><input type="password" placeholder="Password"></div>
+        <div class="cta">Create account</div>
+        <div class="privacy-note">By continuing you agree to our Terms and Privacy Policy. Your data stays yours.</div>
+      </section>
+
+      <!-- 29 · PLAN REVEAL -->
+      <section class="screen reveal" data-act="4" data-name="29 · Plan reveal (peak — review modal here)">
+        <div class="check" id="checkMark"><svg viewBox="0 0 24 24"><polyline points="4,13 10,19 20,6"/></svg></div>
+        <h1><span class="nameSlot">Prakash</span>, your Amsterdam fuel plan is ready</h1>
+        <div class="sub">Portioned to your training, all the way to the start line.</div>
+        <div class="race-pill">Race-ready by Oct 18, 2026</div>
+        <div class="chart-card">
+          <svg width="100%" height="130" viewBox="0 0 320 130" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gWith3" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--chart-with)" stop-opacity=".38"/>
+                <stop offset="1" stop-color="var(--chart-with)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,118 C60,112 110,108 180,100 C240,93 290,88 320,85 L320,130 L0,130 Z" fill="var(--chart-without)" opacity=".25"/>
+            <path d="M0,118 C60,112 110,108 180,100 C240,93 290,88 320,85" fill="none" stroke="var(--chart-without)" stroke-width="2"/>
+            <path d="M0,118 C50,92 90,62 150,42 C220,22 275,12 320,6 L320,130 L0,130 Z" fill="url(#gWith3)"/>
+            <path d="M0,118 C50,92 90,62 150,42 C220,22 275,12 320,6" fill="none" stroke="var(--chart-with)" stroke-width="2.5"/>
+          </svg>
+          <div class="legend">
+            <span><i style="background:var(--chart-with)"></i>Fueled with Crunch</span>
+            <span><i style="background:var(--chart-without)"></i>On guesswork</span>
+          </div>
+        </div>
+        <div class="statrow">
+          <div class="stat"><b class="countup" data-target="94">0</b><span>days to race</span></div>
+          <div class="stat"><b class="countup" data-target="3">0</b><span>meals tuned daily</span></div>
+          <div class="stat"><b class="countup" data-target="14">0</b><span>week plan</span></div>
+        </div>
+        <div class="cta">See my plan</div>
+      </section>
+
+      <!-- 30 · NOTIFICATION PRE-PROMPT -->
+      <section class="screen" data-act="4" data-name="30 · Notification pre-prompt">
+        <div class="notif-demo">
+          <div class="k" style="font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin-bottom:18px;font-weight:600">Tomorrow-eve fueling</div>
+          <h2 class="serif" style="font-size:23px;font-weight:600;text-align:center;margin-bottom:28px;max-width:280px">This is exactly what you'll get, the night before a big session</h2>
+          <div class="notif">
+            <div class="ic"></div>
+            <div class="txt"><b>Crunch</b><span>Tomorrow: 16K long run — extra portion at dinner tonight.</span></div>
+            <div class="time">9:41 PM</div>
+          </div>
+          <p style="font-size:13.5px;color:var(--ink2);max-width:280px;line-height:1.5">We'll only nudge you the night before something that matters.</p>
+        </div>
+        <div class="cta">Allow Notifications</div>
+        <div class="cta secondary">Not now</div>
+      </section>
+
+      <!-- 31 · PAYWALL — natural next step after the plan reveal -->
+      <section class="screen pay" data-act="4" data-name="31 · Paywall (trial-timeline)">
+        <div class="topnav"><div class="close" onclick="openExit()">✕</div></div>
+
+        <!-- outcome-selling headline, not a feature wall -->
+        <h1>Your Amsterdam plan is ready to run</h1>
+        <div class="sub">Unlock every daily portion from tomorrow's run all the way to the start line.</div>
+
+        <!-- value framing: the future you're buying -->
+        <div class="featlist">
+          <div class="feat"><span class="fi">✓</span><span>Daily portions tuned to every run and rest day</span></div>
+          <div class="feat"><span class="fi">✓</span><span>Auto-sync with Strava &amp; Runna — portions update themselves</span></div>
+          <div class="feat"><span class="fi">✓</span><span>Your carb-load &amp; taper handled automatically in race week</span></div>
+          <div class="feat"><span class="fi">✓</span><span>A coach that knows your meals, your race, and your training</span></div>
+        </div>
+
+        <!-- social proof -->
+        <div class="stars">★★★★★ <b>4.9 · early runners</b></div>
+        <div class="quote">"First marathon I didn't hit the wall. I finally knew what to eat the night before." — Dana, first-time marathoner</div>
+
+        <!-- two plans only; annual pre-selected -->
+        <div class="plans">
+          <div class="plan" onclick="pickPlan(this)">
+            <div class="name">Monthly <span class="radio"></span></div>
+            <div class="price">$14.99</div>
+            <div class="per">per month</div>
+          </div>
+          <div class="plan hero" onclick="pickPlan(this)">
+            <div class="badge">BEST VALUE</div>
+            <div class="name">Annual <span class="radio"></span></div>
+            <div class="price">$89.99</div>
+            <div class="per">per year</div>
+          </div>
+        </div>
+        <!-- price anchor: break it down + compare to an everyday spend -->
+        <div class="anchor"><b>Just $1.73 a week</b> — less than one race-day gel.</div>
+        <div class="viewall" onclick="openPlans()">View all plans</div>
+
+        <!-- Blinkist-style trial timeline: removes "will I get charged?" fear -->
+        <div class="timeline">
+          <div class="tstep"><div class="tdot"></div><b>Today</b><span>Full access, free</span></div>
+          <div class="tstep"><div class="tdot"></div><b>Day 6</b><span>Reminder email</span></div>
+          <div class="tstep"><div class="tdot"></div><b>Day 7</b><span>Trial ends</span></div>
+        </div>
+        <div class="trial-note">7 days free. We'll remind you 2 days before it ends — no surprise charge.</div>
+        <div class="cancel-line">No commitment · cancel anytime</div>
+
+        <div class="cta">Start my 7-day free trial <span class="chev">›</span></div>
+
+        <!-- science as reassurance, tucked below the fold, not the opener -->
+        <div class="sciencecard" style="margin-top:16px"><b>Built on peer-reviewed sports science</b><span>Burke 2011 · Jeukendrup 2011 · Morton 2018 · ISSN 2017</span></div>
+        <div class="legalrow"><span>Restore Purchase</span><span>Terms</span><span>Privacy</span></div>
+
+        <!-- ===== view-all-plans sheet (hidden behind "View all plans") ===== -->
+        <div class="sheet-scrim" id="plansScrim" onclick="closePlans()"></div>
+        <div class="sheet" id="plansSheet">
+          <div class="grab"></div>
+          <h3>Choose your plan</h3>
+          <div class="shsub">All plans include everything. 7-day free trial on annual.</div>
+          <div class="sheet-plan hero">
+            <div><div class="sp-name">Annual · free trial</div><div class="sp-per">$1.73/week · billed $89.99/yr</div></div>
+            <div class="sp-price">$89.99</div>
+          </div>
+          <div class="sheet-plan">
+            <div><div class="sp-name">Monthly</div><div class="sp-per">$14.99/month</div></div>
+            <div class="sp-price">$14.99</div>
+          </div>
+          <div class="cta small" onclick="closePlans()">Done</div>
+        </div>
+
+        <!-- ===== exit-intent sheet (on ✕) — offer monthly instead of aggressive discount ===== -->
+        <div class="sheet-scrim" id="exitScrim" onclick="closeExit()"></div>
+        <div class="sheet" id="exitSheet">
+          <div class="grab"></div>
+          <h3>Not ready for a year?</h3>
+          <div class="shsub">No pressure. You can start month-to-month and switch anytime — your plan's already built.</div>
+          <div class="sheet-plan hero">
+            <div><div class="sp-name">Monthly · start today</div><div class="sp-per">$14.99/month · cancel anytime</div></div>
+            <div class="sp-price">$14.99</div>
+          </div>
+          <div class="cta small" onclick="closeExit()">Start monthly</div>
+          <div class="cta secondary" onclick="closeExit()" style="margin:6px auto 0;display:block;text-align:center">Maybe later</div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const phone = document.getElementById('phone');
+const screens = [...document.querySelectorAll('.screen')];
+const dotsEl = document.getElementById('dots');
+let cur = 0;
+
+const actNames = {1:'Act 1 — The Hook',2:'Act 2 — Recognition',3:'Act 3 — Climax',4:'Act 4 — Conclusion'};
+
+screens.forEach((s,i)=>{
+  const d=document.createElement('span');
+  d.classList.add('act'+s.dataset.act);
+  d.onclick=()=>go(i);
+  dotsEl.appendChild(d);
+});
+
+function go(i){
+  cur=(i+screens.length)%screens.length;
+  screens.forEach((s,j)=>s.classList.toggle('on',j===cur));
+  [...dotsEl.children].forEach((d,j)=>d.classList.toggle('on',j===cur));
+  document.getElementById('screenLabel').innerHTML = '<b>'+screens[cur].dataset.name+'</b>';
+  document.getElementById('actLabel').textContent = actNames[screens[cur].dataset.act] || '';
+  if(screens[cur].classList.contains('reveal')){
+    resetCountUps();
+    setTimeout(countUp, 60);
+    setTimeout(burstConfetti, 480);
+  }
+  const liveLoading = screens[cur].querySelector('#liveLoading');
+  const liveAnswer = screens[cur].querySelector('#liveAnswer');
+  if(liveLoading && liveAnswer){
+    liveLoading.style.display='flex';
+    liveAnswer.classList.add('live-hidden');
+    liveAnswer.style.animation='none';
+    setTimeout(()=>{
+      liveLoading.style.display='none';
+      liveAnswer.classList.remove('live-hidden');
+      void liveAnswer.offsetWidth; /* restart entrance animation */
+      liveAnswer.style.animation='';
+    },1400);
+  }
+}
+function nav(d){ go(cur+d); }
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight')nav(1);
+  if(e.key==='ArrowLeft')nav(-1);
+  if(e.key.toLowerCase()==='t')setTheme(phone.dataset.theme==='dark'?'dawn':'dark');
+});
+function setTheme(t){
+  phone.dataset.theme=t;
+  document.getElementById('tDark').classList.toggle('active',t==='dark');
+  document.getElementById('tDawn').classList.toggle('active',t==='dawn');
+}
+
+function fit(){
+  const stage=document.querySelector('.stage');
+  const s=Math.min((stage.clientHeight-16)/864, (stage.clientWidth-16)/410, 1);
+  document.getElementById('phoneWrap').style.transform='scale('+s+')';
+}
+window.addEventListener('resize',fit); fit();
+
+/* Rotating build lines */
+const lines2=[
+  'Setting carb portions for your long-run days…',
+  'Balancing recovery meals around your midweek sessions…',
+  'Mapping your taper and carb-load to race week…',
+  'Translating targets into your usual meals…'
+];
+let li2=0;
+setInterval(()=>{
+  const el=document.getElementById('rotline2');
+  if(!el) return;
+  el.style.opacity=0;
+  setTimeout(()=>{ li2=(li2+1)%lines2.length; el.textContent=lines2[li2]; el.style.opacity=1; },350);
+},2600);
+
+go(0);
+
+/* Name binding — live-updates every nameSlot span from the name field */
+const nameInput=document.getElementById('nameInput');
+if(nameInput){
+  nameInput.addEventListener('input',()=>{
+    const v = nameInput.value.trim() || 'Runner';
+    document.querySelectorAll('.nameSlot').forEach(el=>el.textContent=v);
+  });
+}
+
+/* Tap-to-pick — handles both single-select (radio) and multi-select (data-multi checkbox) lists */
+document.querySelectorAll('.opt').forEach(opt=>{
+  opt.addEventListener('click',()=>{
+    const multiParent = opt.closest('[data-multi="true"]');
+    if(multiParent){
+      opt.classList.toggle('picked');
+    } else {
+      const siblings = opt.parentElement.querySelectorAll('.opt');
+      siblings.forEach(s=>s.classList.remove('picked'));
+      opt.classList.add('picked');
+    }
+    /* commitment screen: swap the tailored response text */
+    if(opt.closest('#commitList')){
+      document.getElementById('commitResp').textContent = opt.dataset.resp;
+    }
+  });
+});
+
+/* Bouncy bignum bump helper (age / weight / height / longest run sliders) */
+function bump(id,val){
+  const el=document.getElementById(id);
+  el.textContent=val;
+  el.classList.add('bump');
+  clearTimeout(el._bt);
+  el._bt=setTimeout(()=>el.classList.remove('bump'),150);
+}
+
+/* Count-up stat numbers on the plan-reveal screen */
+function resetCountUps(){ document.querySelectorAll('.countup').forEach(el=>{ el.textContent='0'; }); }
+function countUp(){
+  document.querySelectorAll('.countup').forEach(el=>{
+    const target=parseInt(el.dataset.target,10);
+    const dur=700, start=performance.now();
+    function tick(now){
+      const p=Math.min(1,(now-start)/dur);
+      const eased=1-Math.pow(1-p,3);
+      el.textContent=Math.round(target*eased);
+      if(p<1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+/* Paywall: plan selection (two visible plans) */
+function pickPlan(el){
+  el.parentElement.querySelectorAll('.plan').forEach(p=>p.classList.remove('hero'));
+  el.classList.add('hero');
+}
+/* view-all-plans + exit-intent bottom sheets */
+function openPlans(){ document.getElementById('plansScrim').classList.add('show'); document.getElementById('plansSheet').classList.add('show'); }
+function closePlans(){ document.getElementById('plansScrim').classList.remove('show'); document.getElementById('plansSheet').classList.remove('show'); }
+function openExit(){ document.getElementById('exitScrim').classList.add('show'); document.getElementById('exitSheet').classList.add('show'); }
+function closeExit(){ document.getElementById('exitScrim').classList.remove('show'); document.getElementById('exitSheet').classList.remove('show'); }
+
+/* One-time confetti burst from the plan-ready checkmark — brand colours, no game mechanic */
+function burstConfetti(){
+  const origin=document.getElementById('checkMark');
+  if(!origin) return;
+  const colors=['var(--ember)','var(--jade)','var(--gold)'];
+  for(let i=0;i<18;i++){
+    const p=document.createElement('span');
+    p.className='confetti-piece';
+    const angle=Math.random()*Math.PI*2;
+    const dist=60+Math.random()*90;
+    p.style.setProperty('--tx',(Math.cos(angle)*dist)+'px');
+    p.style.setProperty('--ty',(Math.sin(angle)*dist - 20)+'px');
+    p.style.setProperty('--rot',(Math.random()*360-180)+'deg');
+    p.style.background=colors[i%3];
+    p.style.borderRadius=Math.random()>.5?'2px':'50%';
+    p.style.animation='confettiBurst '+(700+Math.random()*300)+'ms cubic-bezier(.2,.7,.3,1) forwards';
+    origin.appendChild(p);
+    setTimeout(()=>p.remove(),1100);
+  }
+}
+</script>
+</body>
+</html>

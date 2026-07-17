@@ -33,6 +33,16 @@ nonisolated enum Constants {
     static let revenueCatPublicKey: String =
         Bundle.main.infoDictionary?["REVENUECAT_PUBLIC_KEY"] as? String ?? ""
 
+    // MARK: - Diet Layer (master-spec §9.2)
+    // Coach copy for the low-carb/keto conflict flag. The engine raises
+    // DietLayer.dietCarbConflictFlag rather than overriding carbs; the Coach opens
+    // this conversation. Not reachable from onboarding (omni/veg/vegan/pesc only),
+    // but honoured for imported/edited profiles.
+    static let dietCarbConflictCoachCopy =
+        "Heads up — you've told us you eat low-carb, but the fueling targets for your " +
+        "race lean heavily on carbohydrate, which is what the research supports for " +
+        "race-pace performance. Want to talk through how to reconcile the two?"
+
     // MARK: - Validation Limits
     static let maxMealDescriptionLength = 500
     static let maxCoachInputLength      = 2_000
