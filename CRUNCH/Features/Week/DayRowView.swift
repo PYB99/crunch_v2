@@ -4,6 +4,7 @@ struct DayRowView: View {
     let date: Date
     let session: TrainingSession?
     var previousSessionType: String? = nil
+    var nextSessionType: String? = nil
     let userProfile: UserProfile
     let raceDate: String?
     let meals: [Meal]
@@ -85,7 +86,8 @@ struct DayRowView: View {
             user: userProfile,
             raceDate: raceDate,
             sessionType: session?.sessionType ?? "rest",
-            previousSessionType: previousSessionType
+            previousSessionType: previousSessionType,
+            nextSessionType: nextSessionType
         )
     }
 

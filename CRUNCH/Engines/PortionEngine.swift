@@ -1,27 +1,47 @@
 import Foundation
 
 // Pure calculation engine — maps daily macro targets to per-meal portion multipliers.
-// Distribution: 25% breakfast / 35% lunch / 40% dinner (AGENTS.md Portion Engine spec).
-// Snack meals are skipped — no distribution defined.
+// Base distribution: 25% breakfast / 35% lunch / 40% dinner (master-spec §8.2).
+// Snacks take 15% each, capped at 25% total; the three main meals renormalize to
+// fill the remainder (§8.2). The day-before long-run/race carb boost (§4.2) is
+// added to dinner on top of its share (master-spec Layer 8).
 enum PortionEngine {
 
-    private static let distribution: [String: Double] = [
+    private static let mainDistribution: [String: Double] = [
         "breakfast": 0.25,
         "lunch":     0.35,
         "dinner":    0.40
     ]
 
-    // Returns one PortionResult per meal that has macro data and a known meal_time.
-    // Input meals are already sorted by sort_order from the caller.
-    static func portions(target: MacroTarget, meals: [Meal]) -> [PortionResult] {
-        meals.compactMap { meal in
-            guard
-                let macros = meal.estimatedMacros,
-                let share  = distribution[meal.mealTime],
-                macros.carbsG > 0
-            else { return nil }
+    private static let snackSharePerMeal: Double = 0.15
+    private static let snackShareCap: Double = 0.25
 
-            let targetCarbsG   = target.carbsG   * share
+    // Returns one PortionResult per meal that has macro data and a known meal_time
+    // (breakfast/lunch/dinner/snack). Input meals are already sorted by sort_order.
+    static func portions(target: MacroTarget, meals: [Meal]) -> [PortionResult] {
+        // Snacks eligible for a share: those that will actually render a result.
+        let snackCount = meals.filter {
+            $0.mealTime == "snack" && ($0.estimatedMacros?.carbsG ?? 0) > 0
+        }.count
+        let snackShareTotal = min(snackSharePerMeal * Double(snackCount), snackShareCap)
+        let perSnackShare   = snackCount > 0 ? snackShareTotal / Double(snackCount) : 0
+        let mainScale       = 1.0 - snackShareTotal   // main meals renormalize (§8.2)
+
+        return meals.compactMap { meal in
+            guard let macros = meal.estimatedMacros, macros.carbsG > 0 else { return nil }
+
+            let share: Double
+            if meal.mealTime == "snack" {
+                share = perSnackShare
+            } else if let mainShare = mainDistribution[meal.mealTime] {
+                share = mainShare * mainScale
+            } else {
+                return nil   // unknown meal_time
+            }
+
+            // Day-before boost lands entirely on dinner, over and above its share.
+            let dinnerBoostG   = meal.mealTime == "dinner" ? target.dayBeforeCarbBoostG : 0
+            let targetCarbsG   = target.carbsG   * share + dinnerBoostG
             let targetProteinG = target.proteinG * share
             let targetFatG     = target.fatG     * share
 

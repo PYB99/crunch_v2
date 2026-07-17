@@ -337,6 +337,14 @@ Surfaced in the 2026-07-14 live-schema review (cross-ref `docs/phase7-remediatio
 | D3 | `handle_auth_user_created()` (public) is fired by a trigger on `auth.users`, which a `--schema public` dump/baseline does not capture — a fresh `db reset` won't auto-insert `public.users` rows on signup. | add the `auth.users` trigger to a migration, or document that `create-user-profile` covers it |
 | D4 | `requesting_user_id()` doc previously said `auth.jwt()->>'sub'`; it actually reads `current_setting('request.jwt.claims')`. **Resolved in this update** (function block + schema header above). | — (done) |
 
+### Known Technical Debt (Engine — deferred, tracked)
+
+Surfaced in the 2026-07-17 Phase 5.1 band-matrix sweep. Inversion sub-issue guarded same day; the collapse remains deferred — this is its permanent home.
+
+| ID | Debt | Fix when addressed |
+|---|---|---|
+| E1 | **The TDEE carb ceiling collapses the §4.1 training-level carb bands on training-day long runs (advanced == intermediate above ~55 kg).** Sweep (`long_run`, male, age 30, Band B vs Band C, 45–100 kg in 5 kg steps): the bands differentiate as designed only at **45–55 kg** (Δ 67.5 → 8.5 g/day); from **~60 kg upward they collapse** to the same reconciled value — both clamped to the carb value that reconciles the day to TDEE at the 20% fat floor. The ceiling was calibrated for the race-week 11 g/kg carb-**load**, not for training-day long runs, so it flattens a legitimately higher advanced-runner target. The raw §4.1 bands are still correct; they're just not observable in output above ~55 kg on long runs. **Inversion sub-issue (resolved 2026-07-17):** the pre-guard reconciliation could leave a *lower* band above the ceiling (FIX A's 0.9×floor relaxation) while a higher band was clamped to it, inverting the order (85 kg: advanced 539.0 g < intermediate 551.6 g). A training-day monotonic carb ceiling in `MacroEngine.calculateFat` (gated off race-week carb-load by `isCarbLoad`, flag `training_carb_ceiling_capped`) now forbids the inversion — advanced is guaranteed ≥ intermediate at every weight. Guarded by `MacroEngineTests.longRunBandCNeverInvertsBelowBandB` (never invert) + `…StrictlyExceedsBandBWhenCeilingInactive` (strict where un-clamped). | Section 7 phase engine: give training-day vs race-week **distinct** carb ceilings so only `race_week` hits the aggressive TDEE-relative cap — that de-collapses the bands above ~55 kg. Section 7 is the layer actually meant to differentiate training-day from race-week ceilings, so the full fix belongs there, not in a further `calculateFat` patch. |
+
 ---
 
 ## Security Rules

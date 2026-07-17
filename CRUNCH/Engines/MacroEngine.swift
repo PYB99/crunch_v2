@@ -15,13 +15,14 @@ enum TrainingPhase: String {
 // Protein: Morton et al. BJSM 2018, ISSN 2017; recovery-day 2.0 g/kg (Ivy 2002)
 // Fat: 20–35% of energy with reconciliation guards (Mountjoy 2014, Loucks 2004)
 //
-// Scope note (master-spec Section 14, items 1–6 only): this is a targeted upgrade
-// of the single-value engine, NOT the full 8-layer rebuild. Training-level carb
-// bands (§4.1 columns), race/age modifiers, phase carb multipliers, and the
-// new phase detection (§7.1 post_race_recovery) are deferred to the Section 7–12
-// phase. The diet layer (§2.4 protein modifier + §9.2 low-carb conflict flag) is
-// implemented here (Phase 5). Representative Band-B values stand in where a band
-// table would apply.
+// Scope note (master-spec Sections 14 items 1–7 + the §14.11 "confirm wired"
+// tail): targeted upgrade of the single-value engine, NOT the full 8-layer
+// rebuild. Now switched on (Phase 5.1): training-level A/B/C carb bands (§4.1),
+// day-before long-run/race carb boost (§4.2, surfaced via Layer 8), and the
+// masters age protein modifier with the §5.1 2.5 g/kg hard cap. Already live:
+// diet protein modifier (§2.4) + low-carb conflict flag (§9.2). Still deferred
+// to the Section 7–12 phase: phase carb/protein multipliers (§4.3), the new
+// phase detection (§7.1 post_race_recovery), and the duration/MET model (§3.3).
 enum MacroEngine {
 
     // MARK: - Public
@@ -31,9 +32,13 @@ enum MacroEngine {
         raceDate: String?,
         sessionType: String,
         previousSessionType: String? = nil,
+        nextSessionType: String? = nil,
         additionalActivities: [ActivityType] = []
     ) -> MacroTarget {
         let kg = user.weightKg
+
+        // Training-level band (§2.1) — selects the Layer 3 carb-table column.
+        let band = trainingBand(user.trainingLevel)
 
         // Resolve recovery-day (§3.4), then canonicalise aliases (cycling/swimming
         // → easy_run; legacy/ultra "race" → race_marathon).
@@ -62,15 +67,18 @@ enum MacroEngine {
         // bounded below by FIX B).
         var carbsG = phase == .raceWeek
             ? 11.0 * kg
-            : carbsPerKg(type) * kg
+            : carbsPerKg(type, band: band) * kg
 
         // Protein: 1.7 g/kg baseline; recovery day 2.0 g/kg (§5.1 in-scope subset).
-        // Diet digestibility modifier (§2.4) scales the per-kg target before any
-        // activity additions (which are fixed absolute grams). Taper 1.85 /
-        // post-race 2.2 / age modifiers remain deferred.
+        // Order per §5.1: base × age modifier (§2.3) × diet digestibility modifier
+        // (§2.4), then the 2.5 g/kg hard cap — all on the per-kg value, before the
+        // fixed absolute activity additions below. Taper 1.85 / post-race 2.2 and
+        // the dual-goal floor remain deferred.
         let baseProteinPerKg: Double = (type == "recovery_day" ? 2.0 : 1.7)
+        let ageModifier = ageProteinModifier(user.age)
         let dietModifier = DietLayer.proteinModifier(for: user.diet)
-        var proteinG = baseProteinPerKg * kg * dietModifier
+        let proteinPerKg = min(baseProteinPerKg * ageModifier * dietModifier, 2.5)
+        var proteinG = proteinPerKg * kg
 
         // Secondary activity adjustments (interim additive model — Section 11's
         // MET/EEE→TDEE routing is deferred; these deltas are applied pre-fat so
@@ -86,8 +94,11 @@ enum MacroEngine {
         }
 
         // Fat Engine (§6.1) — 20% floor / 35% ceiling + both reconciliation fixes.
+        // isCarbLoad gates the training-day carb ceiling off during race-week
+        // carb-load, whose deliberate TDEE overshoot is FIX B's job (see E1 note).
         let (fatG, adjustedCarbsG, fatFlags) = calculateFat(
-            tdee: tdee, carbsG: carbsG, proteinG: proteinG, kg: kg, type: type
+            tdee: tdee, carbsG: carbsG, proteinG: proteinG, kg: kg, type: type,
+            isCarbLoad: phase == .raceWeek
         )
         carbsG = adjustedCarbsG
 
@@ -99,6 +110,14 @@ enum MacroEngine {
             flags.append(DietLayer.dietCarbConflictFlag)
         }
 
+        // Day-before long-run/race carb boost (§4.2). Extra glycogen-topping carbs
+        // for tomorrow's big session, surfaced on dinner by the Portion Engine
+        // (Layer 8). Kept OUT of the reconciled daily totals above (per §4.4 it
+        // rides separately) so the Fat Engine's FIX A/B can't claw it back.
+        let dayBeforeBoostG = isDayBeforeLongOrRace(nextSessionType)
+            ? dayBeforeBoostPerKg(band) * kg
+            : 0.0
+
         return MacroTarget(
             carbsG: carbsG,
             proteinG: proteinG,
@@ -106,7 +125,8 @@ enum MacroEngine {
             caloriesKcal: carbsG * 4 + proteinG * 4 + fatG * 9,
             sessionType: resolvedType,
             trainingPhase: phase.rawValue,
-            flags: flags
+            flags: flags,
+            dayBeforeCarbBoostG: dayBeforeBoostG
         )
     }
 
@@ -192,20 +212,67 @@ enum MacroEngine {
         }
     }
 
-    // Carbohydrate g/kg (§4.1, Band-B representative). Existing run values
-    // unchanged; recovery_day + race_* split are the in-scope additions.
-    private static func carbsPerKg(_ type: String) -> Double {
+    // Training-level → band (§2.1): beginner A / intermediate B / advanced C.
+    // Any non-standard string falls to B, preserving the prior Band-B behavior.
+    private static func trainingBand(_ level: String) -> String {
+        switch level {
+        case "beginner":  return "A"
+        case "advanced":  return "C"
+        default:          return "B"   // intermediate + unknown
+        }
+    }
+
+    // Carbohydrate g/kg (§4.1) — full session × training-level band matrix. Only
+    // the canonical primary session types are reachable here (cycling/swimming
+    // fold to easy_run; gym_* are additive activities), so the §4.1 gym/cross-
+    // training rows are intentionally omitted. Unknown band defaults to B.
+    private static func carbsPerKg(_ type: String, band: String) -> Double {
+        let (a, b, c): (Double, Double, Double)
         switch type {
-        case "easy_run":       return 6.0
-        case "tempo":          return 7.0
-        case "interval":       return 7.0
-        case "long_run":       return 8.5
-        case "recovery_day":   return 6.0
-        case "race_5k":        return 5.5
-        case "race_10k":       return 6.5
-        case "race_half":      return 8.5
-        case "race_marathon":  return 10.0
-        default:               return 4.0    // rest
+        case "easy_run":       (a, b, c) = (4.0, 5.5, 6.5)
+        case "tempo":          (a, b, c) = (5.5, 7.0, 8.0)
+        case "interval":       (a, b, c) = (6.0, 7.5, 8.5)
+        case "long_run":       (a, b, c) = (7.0, 8.5, 10.0)
+        case "recovery_day":   (a, b, c) = (5.5, 6.0, 6.5)
+        case "race_5k":        (a, b, c) = (5.0, 5.5, 6.0)
+        case "race_10k":       (a, b, c) = (6.0, 6.5, 7.0)
+        case "race_half":      (a, b, c) = (7.5, 8.5, 9.5)
+        case "race_marathon":  (a, b, c) = (9.0, 10.0, 11.0)
+        default:               (a, b, c) = (3.0, 3.5, 4.5)   // rest
+        }
+        switch band {
+        case "A":  return a
+        case "C":  return c
+        default:   return b
+        }
+    }
+
+    // Masters age → protein modifier (§2.3): <40 ×1.00 / 40–50 ×1.12 / >50 ×1.20.
+    private static func ageProteinModifier(_ age: Int) -> Double {
+        switch age {
+        case ..<40:  return 1.00
+        case 40...50: return 1.12
+        default:     return 1.20   // > 50
+        }
+    }
+
+    // Day-before boost trigger (§4.2): tomorrow is a long run or a half/full/ultra
+    // race. Canonicalise first so legacy "race"/"race_ultra" fold to race_marathon;
+    // short races (5k/10k) deliberately do NOT trigger a night-before load.
+    private static func isDayBeforeLongOrRace(_ nextSessionType: String?) -> Bool {
+        guard let next = nextSessionType else { return false }
+        switch canonical(next) {
+        case "long_run", "race_half", "race_marathon": return true
+        default:                                       return false
+        }
+    }
+
+    // Day-before boost g/kg by band (§4.2): A +1.0 / B +1.5 / C +2.0.
+    private static func dayBeforeBoostPerKg(_ band: String) -> Double {
+        switch band {
+        case "A":  return 1.0
+        case "C":  return 2.0
+        default:   return 1.5
         }
     }
 
@@ -224,7 +291,8 @@ enum MacroEngine {
     // guard) so the day's macros reconcile to TDEE. Returns (fat_g, adjusted
     // carbs_g, flags).
     private static func calculateFat(
-        tdee: Double, carbsG: Double, proteinG: Double, kg: Double, type: String
+        tdee: Double, carbsG: Double, proteinG: Double, kg: Double, type: String,
+        isCarbLoad: Bool = false
     ) -> (fatG: Double, carbsG: Double, flags: [String]) {
 
         let usedCalories = carbsG * 4 + proteinG * 4
@@ -263,6 +331,26 @@ enum MacroEngine {
             if abs(newCarbs - finalCarbsG) > 0.0001 {
                 flags.append("carb_load_capped")
                 finalCarbsG = newCarbs
+                let remainingForFat = tdee - (finalCarbsG * 4 + proteinG * 4)
+                fatG = max(remainingForFat / 9, fatMinimum * 0.9)
+            }
+        }
+
+        // Training-day carb ceiling (E1 monotonicity guard). On non-carb-load days,
+        // never let reconciled carbs sit above the value that reconciles the day to
+        // TDEE at the 20% fat floor. FIX A's 0.9×floor relaxation and FIX B's 2%
+        // trigger tolerance can otherwise leave a lower training-level band above the
+        // ceiling while a higher band gets clamped to it — inverting the §4.1 bands
+        // (e.g. an 85kg long run, where advanced fell below intermediate). This cap
+        // forbids the inversion; it is deliberately skipped on race-week carb-load,
+        // whose intended TDEE overshoot is governed by FIX B. Full de-collapse of the
+        // bands above the ceiling remains Section 7's job (AGENTS.md tech-debt E1).
+        if !isCarbLoad {
+            let carbCeiling = (tdee - proteinG * 4 - fatMinimum * 9) / 4
+            let ceilingCap = max(carbCeiling, sessionCarbFloor(type) * kg)
+            if finalCarbsG > ceilingCap + 0.0001 {
+                flags.append("training_carb_ceiling_capped")
+                finalCarbsG = ceilingCap
                 let remainingForFat = tdee - (finalCarbsG * 4 + proteinG * 4)
                 fatG = max(remainingForFat / 9, fatMinimum * 0.9)
             }

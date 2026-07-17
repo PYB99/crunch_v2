@@ -11,6 +11,10 @@ struct MacroTarget {
     // "fat_floor_triggered" (FIX A ran) / "carb_load_capped" (FIX B ran).
     // Computed for testability + future explainability UI; no reader yet.
     let flags: [String]
+    // Extra dinner-only carbs for tomorrow's long run/race (§4.2). Deliberately
+    // NOT part of the reconciled daily totals above — the Portion Engine adds it
+    // to the dinner meal (Layer 8). 0 on ordinary days.
+    let dayBeforeCarbBoostG: Double
 
     init(
         carbsG: Double,
@@ -19,7 +23,8 @@ struct MacroTarget {
         caloriesKcal: Double,
         sessionType: String,
         trainingPhase: String,
-        flags: [String] = []
+        flags: [String] = [],
+        dayBeforeCarbBoostG: Double = 0
     ) {
         self.carbsG = carbsG
         self.proteinG = proteinG
@@ -28,5 +33,6 @@ struct MacroTarget {
         self.sessionType = sessionType
         self.trainingPhase = trainingPhase
         self.flags = flags
+        self.dayBeforeCarbBoostG = dayBeforeCarbBoostG
     }
 }

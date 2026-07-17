@@ -127,13 +127,62 @@ struct PortionEngineTests {
         #expect(results[0].meal.mealTime == "lunch")
     }
 
-    @Test func snackMealSkipped() {
+    // MARK: - Snack support (§8.2)
+
+    @Test func snackReceivesCappedShareAndMainMealsRenormalize() {
+        // One snack → 15% share; the three main meals renormalize to fill the
+        // remaining 85% (dinner: 40% × 0.85).
         let snack  = makeMeal(time: "snack",  carbsG: 30)
         let dinner = makeMeal(time: "dinner", carbsG: 85)
         let target = makeTarget(carbsG: 400)
         let results = PortionEngine.portions(target: target, meals: [snack, dinner])
-        #expect(results.count == 1)
-        #expect(results[0].meal.mealTime == "dinner")
+        #expect(results.count == 2)
+        let snackRes  = results.first { $0.meal.mealTime == "snack" }!
+        let dinnerRes = results.first { $0.meal.mealTime == "dinner" }!
+        #expect(abs(snackRes.targetCarbsG  - 400 * 0.15) < 0.01)
+        #expect(abs(dinnerRes.targetCarbsG - 400 * 0.40 * 0.85) < 0.01)
+    }
+
+    @Test func multipleSnacksCappedAtTwentyFivePercentTotal() {
+        // 3 snacks would be 45%; capped at 25% total, split evenly (§8.2).
+        let snacks = (1...3).map { makeMeal(time: "snack", carbsG: 30, order: $0) }
+        let dinner = makeMeal(time: "dinner", carbsG: 85, order: 4)
+        let target = makeTarget(carbsG: 600)
+        let results = PortionEngine.portions(target: target, meals: snacks + [dinner])
+        let snackTotal = results.filter { $0.meal.mealTime == "snack" }.reduce(0) { $0 + $1.targetCarbsG }
+        #expect(abs(snackTotal - 600 * 0.25) < 0.01)
+        let dinnerRes = results.first { $0.meal.mealTime == "dinner" }!
+        #expect(abs(dinnerRes.targetCarbsG - 600 * 0.40 * 0.75) < 0.01)
+    }
+
+    @Test func snackDayDistributionSumsToOne() {
+        // Breakfast/lunch/dinner + one snack must still allocate exactly the daily total.
+        let meals = [
+            makeMeal(time: "breakfast", carbsG: 65, order: 1),
+            makeMeal(time: "lunch",     carbsG: 70, order: 2),
+            makeMeal(time: "dinner",    carbsG: 85, order: 3),
+            makeMeal(time: "snack",     carbsG: 30, order: 4)
+        ]
+        let target = makeTarget(carbsG: 600)
+        let results = PortionEngine.portions(target: target, meals: meals)
+        let total = results.reduce(0) { $0 + $1.targetCarbsG }
+        #expect(abs(total - 600) < 0.01)
+    }
+
+    // MARK: - Day-before carb boost (§4.2, applied via Layer 8)
+
+    @Test func dayBeforeBoostAddedToDinnerOnly() {
+        let breakfast = makeMeal(time: "breakfast", carbsG: 65, order: 1)
+        let dinner    = makeMeal(time: "dinner",    carbsG: 85, order: 2)
+        let target = MacroTarget(carbsG: 400, proteinG: 120, fatG: 60, caloriesKcal: 2000,
+                                 sessionType: "easy_run", trainingPhase: "Build",
+                                 dayBeforeCarbBoostG: 105)
+        let results = PortionEngine.portions(target: target, meals: [breakfast, dinner])
+        let bRes = results.first { $0.meal.mealTime == "breakfast" }!
+        let dRes = results.first { $0.meal.mealTime == "dinner" }!
+        // No snacks → mainScale 1.0. Breakfast unchanged; dinner gets share + boost.
+        #expect(abs(bRes.targetCarbsG - 400 * 0.25) < 0.01)
+        #expect(abs(dRes.targetCarbsG - (400 * 0.40 + 105)) < 0.01)
     }
 
     @Test func mealWithZeroCarbsSkipped() {

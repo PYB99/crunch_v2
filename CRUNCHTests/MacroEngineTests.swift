@@ -22,6 +22,11 @@ struct MacroEngineTests {
     let male75   = UserProfile(weightKg: 75, heightCm: 178, age: 32, gender: "male",   trainingLevel: "intermediate")
     let female60 = UserProfile(weightKg: 60, heightCm: 165, age: 28, gender: "female", trainingLevel: "beginner")
 
+    // 70kg age-30 male; vary training level / age to isolate the band + age modifiers.
+    func profile(level: String = "intermediate", age: Int = 30) -> UserProfile {
+        UserProfile(weightKg: 70, heightCm: 175, age: age, gender: "male", trainingLevel: level)
+    }
+
     func raceDateString(weeksAway: Int) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -132,7 +137,11 @@ struct MacroEngineTests {
         #expect(t.trainingPhase == TrainingPhase.raceWeek.rawValue)
         #expect(t.flags.contains("carb_load_capped"))
         let tdee = expectedTDEE(small, "rest")   // rest multiplier holds in race week
-        #expect(abs(t.caloriesKcal - tdee) / tdee < 0.03)
+        // ~5% overshoot: at 68 the masters protein modifier (×1.20, §2.3) adds fixed
+        // protein the Fat Engine can't reclaim on this tiny floored body — the same
+        // acknowledged small-body overshoot, now slightly larger. FIX B still caps
+        // the carb-load (assertion below), which is what this case guards.
+        #expect(abs(t.caloriesKcal - tdee) / tdee < 0.06)
         // Capped below the flat 8 g/kg weight floor → proves the TDEE-relative floor won.
         #expect(t.carbsG < 8.0 * 45.0)
     }
@@ -300,10 +309,16 @@ struct MacroEngineTests {
                             // reallocation) undershoots light days, and the §6.3
                             // carb floors overshoot small/low-TDEE bodies. Faithful
                             // to the master-spec formulas — the >5% gaps are a
-                            // flagged product finding, not a bug. Envelope catches
-                            // gross errors (NaN, sign, 2× mistakes).
-                            #expect(t.caloriesKcal >= tdee * 0.82)
-                            #expect(t.caloriesKcal <= tdee * 1.12)
+                            // flagged product finding, not a bug. Phase 5.1 widened
+                            // both extremes (the real §4.1 Band-A carbs are lower
+                            // than the old flat values → deeper light-day undershoot;
+                            // the §2.3 masters protein modifier adds fixed protein
+                            // the Fat Engine can't reclaim on tiny floored bodies →
+                            // larger small-body overshoot). Envelope stays a coarse
+                            // gross-error net (NaN, sign, 2× mistakes) — the real
+                            // safety work is the fat%/protein/carb bounds above.
+                            #expect(t.caloriesKcal >= tdee * 0.78)
+                            #expect(t.caloriesKcal <= tdee * 1.18)
                         }
                     }
                 }
@@ -366,6 +381,167 @@ struct MacroEngineTests {
         #expect(keto.flags.contains("diet_carb_conflict"))
         #expect(abs(keto.carbsG - omni.carbsG) < 0.01)   // no carb override
         #expect(!omni.flags.contains("diet_carb_conflict"))
+    }
+
+    // MARK: - Phase 5.1 Item 1: training-level A/B/C carb bands (§4.1)
+
+    @Test func carbBandsEscalateWithTrainingLevel() {
+        // Light/moderate days: the §4.1 columns increase with level and the gap
+        // survives reconciliation (strict). Long-run behaviour (collapse-but-never-
+        // invert, strict when the ceiling is inactive) is covered by the two
+        // dedicated sweep tests below.
+        for session in ["rest", "easy_run"] {
+            let a = MacroEngine.calculate(user: profile(level: "beginner"),     raceDate: nil, sessionType: session)
+            let b = MacroEngine.calculate(user: profile(level: "intermediate"), raceDate: nil, sessionType: session)
+            let c = MacroEngine.calculate(user: profile(level: "advanced"),     raceDate: nil, sessionType: session)
+            #expect(a.carbsG < b.carbsG)
+            #expect(b.carbsG < c.carbsG)
+        }
+    }
+
+    // Band B vs Band C long-run carbs at a given weight (male, age 30).
+    func longRunCarbs(kg: Double, level: String) -> MacroTarget {
+        MacroEngine.calculate(
+            user: UserProfile(weightKg: kg, heightCm: 175, age: 30, gender: "male", trainingLevel: level),
+            raceDate: nil, sessionType: "long_run")
+    }
+
+    @Test func longRunBandCNeverInvertsBelowBandB() {
+        // Hard monotonicity invariant (AGENTS.md tech-debt E1 guard): the advanced
+        // long-run carb target must never fall below the intermediate one, at ANY
+        // body weight. Reconciliation may collapse the bands to equal above the TDEE
+        // carb ceiling, but it must never invert them. This is the assertion that
+        // catches the 85kg case (pre-guard: advanced 539.0 < intermediate 551.6)
+        // directly.
+        var kg = 45.0
+        while kg <= 100.0 {
+            let b = longRunCarbs(kg: kg, level: "intermediate")
+            let c = longRunCarbs(kg: kg, level: "advanced")
+            #expect(c.carbsG >= b.carbsG - 0.01, "inverted at \(kg)kg: B=\(b.carbsG) C=\(c.carbsG)")
+            kg += 5.0
+        }
+    }
+
+    @Test func longRunBandCStrictlyExceedsBandBWhenCeilingInactive() {
+        // Where the TDEE carb ceiling hasn't clamped the advanced target (the guard
+        // isn't interfering), the §4.1 bands must differentiate as designed —
+        // advanced strictly above intermediate. "Un-clamped" is detected directly:
+        // Band C still sitting at its full 10 g/kg target means no reconciliation
+        // (FIX A / ceiling / FIX B) touched it. `sawUnclamped` guards against a
+        // vacuous pass (at least one such weight exists — ~45kg, where the raw long-
+        // run target fits under TDEE).
+        var sawUnclamped = false
+        var kg = 45.0
+        while kg <= 100.0 {
+            let b = longRunCarbs(kg: kg, level: "intermediate")
+            let c = longRunCarbs(kg: kg, level: "advanced")
+            if c.carbsG >= 10.0 * kg - 0.01 {   // advanced at its designed Band-C target
+                sawUnclamped = true
+                #expect(c.carbsG > b.carbsG, "bands should differ at \(kg)kg: B=\(b.carbsG) C=\(c.carbsG)")
+            }
+            kg += 5.0
+        }
+        #expect(sawUnclamped)
+    }
+
+    @Test func beginnerRestUsesBandAValue() {
+        // Band A rest = 3.0 g/kg; at 70kg rest the fat floor has room, so carbs are
+        // untouched by reconciliation → exact.
+        let t = MacroEngine.calculate(user: profile(level: "beginner"), raceDate: nil, sessionType: "rest")
+        #expect(abs(t.carbsG - 3.0 * 70.0) < 0.01)
+    }
+
+    @Test func unknownTrainingLevelFallsToBandB() {
+        let unknown = MacroEngine.calculate(user: profile(level: "pro-elite"),   raceDate: nil, sessionType: "rest")
+        let interB  = MacroEngine.calculate(user: profile(level: "intermediate"), raceDate: nil, sessionType: "rest")
+        #expect(abs(unknown.carbsG - interB.carbsG) < 0.01)
+    }
+
+    // MARK: - Phase 5.1 Item 3: masters age protein modifier (§2.3) + 2.5 cap (§5.1)
+
+    @Test func mastersProteinModifierByAgeBand() {
+        let young  = MacroEngine.calculate(user: profile(age: 32), raceDate: nil, sessionType: "rest")
+        let mid    = MacroEngine.calculate(user: profile(age: 45), raceDate: nil, sessionType: "rest")
+        let senior = MacroEngine.calculate(user: profile(age: 60), raceDate: nil, sessionType: "rest")
+        #expect(abs(young.proteinG  - 1.7 * 70.0)        < 0.01)   // <40 ×1.00
+        #expect(abs(mid.proteinG    - 1.7 * 70.0 * 1.12) < 0.01)   // 40–50 ×1.12
+        #expect(abs(senior.proteinG - 1.7 * 70.0 * 1.20) < 0.01)   // >50 ×1.20
+    }
+
+    @Test func ageModifierBoundariesAreInclusive() {
+        func p(_ age: Int) -> Double {
+            MacroEngine.calculate(user: profile(age: age), raceDate: nil, sessionType: "rest").proteinG
+        }
+        #expect(abs(p(39) - 1.7 * 70.0)        < 0.01)   // <40
+        #expect(abs(p(40) - 1.7 * 70.0 * 1.12) < 0.01)   // lower bound of 40–50
+        #expect(abs(p(50) - 1.7 * 70.0 * 1.12) < 0.01)   // upper bound of 40–50
+        #expect(abs(p(51) - 1.7 * 70.0 * 1.20) < 0.01)   // >50
+    }
+
+    @Test func proteinHardCapAt2_5() {
+        // Highest-stacking combo: recovery day (2.0) × masters >50 (1.20) × vegan
+        // (1.10) = 2.64 g/kg uncapped → must clamp to 2.5 (§5.1).
+        let u = UserProfile(weightKg: 70, heightCm: 175, age: 60, gender: "male",
+                            trainingLevel: "intermediate", diet: "vegan")
+        let t = MacroEngine.calculate(user: u, raceDate: nil,
+                                      sessionType: "rest", previousSessionType: "long_run")
+        #expect(t.sessionType == "recovery_day")
+        #expect(abs(t.proteinG - 2.5 * 70.0) < 0.01)
+    }
+
+    @Test func veganMastersLongRunStaysUnderCap() {
+        // §13 named case: vegan + 50+ + long_run resolves to 1.7×1.20×1.10 = 2.244
+        // g/kg — below the 2.5 cap, so it is NOT clamped.
+        let u = UserProfile(weightKg: 70, heightCm: 175, age: 58, gender: "male",
+                            trainingLevel: "advanced", diet: "vegan")
+        let pPerKg = MacroEngine.calculate(user: u, raceDate: nil, sessionType: "long_run").proteinG / 70.0
+        #expect(pPerKg <= 2.5)
+        #expect(abs(pPerKg - 1.7 * 1.20 * 1.10) < 0.01)
+    }
+
+    // MARK: - Phase 5.1 Item 2: day-before long-run/race carb boost (§4.2)
+
+    @Test func dayBeforeBoostSetWhenTomorrowIsLongOrRace() {
+        // Intermediate (Band B) → +1.5 g/kg when tomorrow is a long run.
+        let t = MacroEngine.calculate(user: male75, raceDate: nil,
+                                      sessionType: "easy_run", nextSessionType: "long_run")
+        #expect(abs(t.dayBeforeCarbBoostG - 1.5 * 75.0) < 0.01)
+    }
+
+    @Test func dayBeforeBoostScalesByBand() {
+        let a = MacroEngine.calculate(user: profile(level: "beginner"), raceDate: nil,
+                                      sessionType: "easy_run", nextSessionType: "race_marathon")
+        let c = MacroEngine.calculate(user: profile(level: "advanced"), raceDate: nil,
+                                      sessionType: "easy_run", nextSessionType: "race_half")
+        #expect(abs(a.dayBeforeCarbBoostG - 1.0 * 70.0) < 0.01)   // Band A +1.0
+        #expect(abs(c.dayBeforeCarbBoostG - 2.0 * 70.0) < 0.01)   // Band C +2.0
+    }
+
+    @Test func dayBeforeBoostZeroForShortRaceEasyOrNoNextSession() {
+        let none   = MacroEngine.calculate(user: male75, raceDate: nil, sessionType: "easy_run")
+        let short  = MacroEngine.calculate(user: male75, raceDate: nil, sessionType: "easy_run", nextSessionType: "race_5k")
+        let easy   = MacroEngine.calculate(user: male75, raceDate: nil, sessionType: "easy_run", nextSessionType: "easy_run")
+        #expect(none.dayBeforeCarbBoostG == 0)
+        #expect(short.dayBeforeCarbBoostG == 0)
+        #expect(easy.dayBeforeCarbBoostG == 0)
+    }
+
+    @Test func legacyRaceNextSessionTriggersBoost() {
+        // Legacy "race" / "race_ultra" canonicalise to race_marathon → they trigger.
+        let legacy = MacroEngine.calculate(user: male75, raceDate: nil, sessionType: "easy_run", nextSessionType: "race")
+        let ultra  = MacroEngine.calculate(user: male75, raceDate: nil, sessionType: "easy_run", nextSessionType: "race_ultra")
+        #expect(legacy.dayBeforeCarbBoostG > 0)
+        #expect(ultra.dayBeforeCarbBoostG  > 0)
+    }
+
+    @Test func dayBeforeBoostDoesNotChangeReconciledDailyTotals() {
+        // The boost rides separately (§4.4): daily carbs/calories are identical with
+        // and without tomorrow's session — only dayBeforeCarbBoostG differs.
+        let plain   = MacroEngine.calculate(user: male75, raceDate: nil, sessionType: "easy_run")
+        let boosted = MacroEngine.calculate(user: male75, raceDate: nil, sessionType: "easy_run", nextSessionType: "long_run")
+        #expect(abs(plain.carbsG - boosted.carbsG) < 0.01)
+        #expect(abs(plain.caloriesKcal - boosted.caloriesKcal) < 0.01)
+        #expect(boosted.dayBeforeCarbBoostG > 0)
     }
 
     @Test func progressiveOverloadOrderingHolds() {

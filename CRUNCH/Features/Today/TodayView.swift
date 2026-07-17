@@ -30,7 +30,8 @@ final class TodayViewModel {
     private var userUUID: UUID?
     private var race: Race?
     private var primarySession: TrainingSession?
-    private var previousSessionType: String?   // yesterday's run — drives recovery-day detection
+    private var previousSessionType: String?   // yesterday's run — drives recovery-day detection (§3.4)
+    private var nextSessionType: String?        // tomorrow's run — drives day-before carb boost (§4.2)
     private var meals: [Meal] = []
 
     // MARK: - Data Loading
@@ -96,13 +97,19 @@ final class TodayViewModel {
                 addedActivity = ActivityType(rawValue: dbActivity.sessionType)
             }
 
-            // Yesterday's run — drives recovery-day detection (master spec §3.4)
-            let yesterdaySessions: [TrainingSession] = try await client.from("training_sessions")
+            // Neighbour days in one query: yesterday's run drives recovery-day
+            // detection (§3.4), tomorrow's run drives the day-before carb boost (§4.2).
+            let neighbourSessions: [TrainingSession] = try await client.from("training_sessions")
                 .select()
-                .eq("session_date", value: yesterdayDateString())
+                .in("session_date", values: [yesterdayDateString(), tomorrowDateString()])
                 .execute()
                 .value
-            previousSessionType = yesterdaySessions.first { MacroEngine.isRunSession($0.sessionType) }?.sessionType
+            previousSessionType = neighbourSessions.first {
+                $0.sessionDate == yesterdayDateString() && MacroEngine.isRunSession($0.sessionType)
+            }?.sessionType
+            nextSessionType = neighbourSessions.first {
+                $0.sessionDate == tomorrowDateString() && MacroEngine.isRunSession($0.sessionType)
+            }?.sessionType
 
             // 4. Meals ordered by sort_order
             meals = try await client.from("meals")
@@ -241,6 +248,7 @@ final class TodayViewModel {
             raceDate: race?.raceDate,
             sessionType: sessionType,
             previousSessionType: previousSessionType,
+            nextSessionType: nextSessionType,
             additionalActivities: activities
         )
 
@@ -410,6 +418,13 @@ final class TodayViewModel {
         fmt.dateFormat = "yyyy-MM-dd"
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
         return fmt.string(from: yesterday)
+    }
+
+    private func tomorrowDateString() -> String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+        return fmt.string(from: tomorrow)
     }
 }
 
